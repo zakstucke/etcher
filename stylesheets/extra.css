@@ -6,10 +6,10 @@
     /* Primary color shades */
     --md-primary-fg-color: #6a0dad;
     --md-primary-fg-color--dark: #6a0dad;
-    --md-primary-bg-color: #4169e1;
+    --md-primary-bg-color: #ffffff;
 
     /* Accent color shades */
     --md-accent-fg-color: #8a2be2;
     --md-accent-fg-color--transparent: #6a0dad10; /* The 10 added at the end gives it 10% alpha */
-    --md-accent-bg-color: #6495ed;
+    --md-accent-bg-color: #ffffff;
 }
