@@ -1,0 +1,106 @@
+name: Tests
+
+# Run when a new PR is created for main branch:
+on:
+    pull_request:
+        branches:
+            - "main"
+
+jobs:
+    qa:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-python@v4
+              with:
+                  python-version: "3.12"
+                  cache: pip
+            - uses: ./.github/actions/install-pre-commit
+
+            # Python project
+            - name: Set up PDM
+              uses: pdm-project/setup-pdm@v3
+              with:
+                  python-version: "3.12"
+                  cache: true
+                  cache-dependency-path: "python/pdm.lock"
+
+            - name: Sync PDM QA
+              run: |
+                  pdm sync -p ./python -d -G qa
+
+            - name: Run QA
+              run: |
+                  . .pre_commit_venv/bin/activate &&
+                  ./dev_scripts/test.sh qa
+
+    whos_changed:
+        uses: ./.github/workflows/whos-changed.yml
+
+    tests_docs:
+        name: Test documentation build
+        needs: whos_changed
+        # Only run if applicable things have changed:
+        if: needs.whos_changed.outputs.docs-changed == 'true'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PDM
+              uses: pdm-project/setup-pdm@v3
+              with:
+                  python-version: "3.12"
+                  cache: true
+                  cache-dependency-path: "docs/pdm.lock"
+
+            - name: Install Node.js
+              uses: actions/setup-node@v2
+              with:
+                  node-version: "20"
+
+            - name: Install dependencies
+              run: |
+                  pdm sync -p ./docs
+
+            - name: Test docs
+              run: |
+                  ./dev_scripts/test.sh docs
+
+    tests_python:
+        needs: whos_changed
+        # Only run if applicable things have changed:
+        if: needs.whos_changed.outputs.py-changed == 'true'
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    # Ubuntu test on all versions:
+                    - { python: "3.8", os: "ubuntu-latest", coverage: false }
+                    - { python: "3.9", os: "ubuntu-latest", coverage: false }
+                    - { python: "3.10", os: "ubuntu-latest", coverage: false }
+                    - { python: "3.11", os: "ubuntu-latest", coverage: false }
+                    - { python: "3.12", os: "ubuntu-latest", coverage: true } # Only run coverage check on the newest version to save time
+
+                    # Make sure other os types work on newest version:
+                    # - { python: "3.12", os: "macOS-latest" } # Mac uses 10x minutes, skipping for now considering devs usually use mac and v similar to linux
+                    - { python: "3.12", os: "windows-latest", coverage: false } # 2x minutes, most different architecture so worth testing
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up PDM
+              uses: pdm-project/setup-pdm@v3
+              with:
+                  python-version: ${{ matrix.python }}
+                  cache: true
+                  cache-dependency-path: "python/pdm.lock"
+
+            - name: Install dependencies
+              run: |
+                  pdm sync -p ./python -d -G test
+
+            - name: Run tests
+              run: |
+                  COVERAGE=${{ matrix.coverage }} ./dev_scripts/test.sh py

@@ -1,0 +1,144 @@
+name: Package Release
+
+# A manual workflow, triggered from the UI
+on:
+    workflow_dispatch:
+        branches:
+            - main
+        inputs:
+            py_release:
+                description: "Python Release"
+                type: boolean
+                required: false
+                default: false
+            py_version:
+                description: "Python Version"
+                default: 0.0.0
+
+jobs:
+    commit_versions:
+        name: Bump Pkg Versions
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        outputs:
+            new-sha: ${{ steps.sha.outputs.SHA }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v4
+            - uses: ./.github/actions/install-pre-commit
+
+            - name: Set up PDM
+              if: ${{ inputs.py_release }}
+              uses: pdm-project/setup-pdm@v3
+              with:
+                  python-version: "3.12"
+                  cache: true
+                  cache-dependency-path: "python/pdm.lock"
+            - name: Update Python version
+              if: ${{ inputs.py_release }}
+              run: |
+                  ./dev_scripts/pkg.sh ver_py_update ${{ inputs.py_version }}
+
+            - name: add and format added files with pre-commit
+              # Running on staged change only as that's all that's needed, || true as don't want it to fail, just modify
+              run: |
+                  git add . &&
+                  pre-commit run --color=always || true &&
+                  git add .
+
+            - name: Commit the new version to the repo
+              uses: EndBug/add-and-commit@v9
+              with:
+                  push: true
+                  message: "chore: bump package versions for release"
+                  author_name: github-actions
+                  author_email: action@github.com
+
+            - name: get sha
+              id: sha
+              run: |
+                  sha_new=$(git rev-parse HEAD)
+                  echo $sha_new
+                  echo "::set-output name=SHA::$sha_new"
+
+            - run: echo ${{ steps.sha.outputs.SHA }}
+
+    # Rebuild docs each time this is run, note there is currently no versioning in the docs for each of the individually packages, will need to be added when a public package is being properly released
+    docs:
+        name: Docs Release
+        needs: [commit_versions]
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ needs.commit_versions.outputs.new-sha }}
+
+            - name: Set up PDM
+              uses: pdm-project/setup-pdm@v3
+              with:
+                  python-version: "3.12"
+                  cache: true
+                  cache-dependency-path: "docs/pdm.lock"
+
+            - name: Install Node.js
+              uses: actions/setup-node@v2
+              with:
+                  node-version: "20"
+
+            - name: Install dependencies
+              run: |
+                  pdm sync -p ./docs
+
+            - name: Build docs
+              run: |
+                  ./dev_scripts/docs.sh build
+
+            - name: Deploy to GitHub Pages
+              uses: crazy-max/ghaction-github-pages@v4
+              with:
+                  keep_history: true
+                  target_branch: docs-site
+                  build_dir: site
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    py_release:
+        name: Python Release
+        needs: [commit_versions]
+        # Run only if requested:
+        if: ${{ inputs.py_release }}
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ needs.commit_versions.outputs.new-sha }}
+
+            - name: Set up PDM
+              uses: pdm-project/setup-pdm@v3
+              with:
+                  python-version: "3.12"
+                  cache: true
+                  cache-dependency-path: "python/pdm.lock"
+
+            - name: Publish package publicly to PyPI
+              run: |
+                  export PDM_PUBLISH_USERNAME="__token__"
+                  export PDM_PUBLISH_PASSWORD="${{ secrets.PYPI_TOKEN }}"
+                  pdm publish -p ./python --repository pypi
+
+            - name: Publish the release notes
+              uses: release-drafter/release-drafter@v5
+              with:
+                  publish: true
+                  tag: "v${{ inputs.py_version }}_py"
+                  name: "${{ inputs.py_version }} - Python"
+              env:
+                  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
