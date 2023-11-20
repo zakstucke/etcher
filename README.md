@@ -7,9 +7,10 @@
 [![PyPI](https://img.shields.io/pypi/v/etcher.svg)][pypi status]
 [![Status](https://img.shields.io/pypi/status/etcher.svg)][pypi status]
 [![Python Version](https://img.shields.io/pypi/pyversions/etcher)][pypi status]
+
 [pypi status]: https://pypi.org/project/etcher/
 
-In-place, continuous templater
+In-place, continuous templater. Powered by Jinja.
 
 ## Installation
 
