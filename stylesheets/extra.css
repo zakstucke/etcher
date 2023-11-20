@@ -1,0 +1,15 @@
+:root {
+    /* https://github.com/squidfunk/mkdocs-material/blob/master/src/templates/assets/stylesheets/main/_colors.scss */
+
+    /* Note we've only set this up to support the dark mode / slate base: */
+
+    /* Primary color shades */
+    --md-primary-fg-color: #6a0dad;
+    --md-primary-fg-color--dark: #6a0dad;
+    --md-primary-bg-color: #4169e1;
+
+    /* Accent color shades */
+    --md-accent-fg-color: #8a2be2;
+    --md-accent-fg-color--transparent: #6a0dad10; /* The 10 added at the end gives it 10% alpha */
+    --md-accent-bg-color: #6495ed;
+}
