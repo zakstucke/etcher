@@ -4,12 +4,12 @@
     /* Note we've only set this up to support the dark mode / slate base: */
 
     /* Primary color shades */
-    --md-primary-fg-color: #6a0dad;
-    --md-primary-fg-color--dark: #6a0dad;
+    --md-primary-fg-color: #a16eff;
+    --md-primary-fg-color--dark: #a16eff;
     --md-primary-bg-color: #ffffff;
 
     /* Accent color shades */
-    --md-accent-fg-color: #8a2be2;
-    --md-accent-fg-color--transparent: #6a0dad10; /* The 10 added at the end gives it 10% alpha */
+    --md-accent-fg-color: #ae82ff;
+    --md-accent-fg-color--transparent: #a16eff10; /* The 10 added at the end gives it 10% alpha */
     --md-accent-bg-color: #ffffff;
 }
