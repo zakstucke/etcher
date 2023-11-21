@@ -41,5 +41,8 @@ context:
 # # The inline flag to add to the top of a file to mark it as a child template.
 # child_flag: "!etch:child"
 
-# # The filename matcher to use to identify templates/children. E.g. foo.etch.txt
-# template_matcher: "etch"
+# # The filename regex to use to identify templates/children.
+# # Regex is used to allow flexibility for the user to choose where the flag should be in the filename.
+# # The specific pattern will be removed from the compiled filename.
+# # E.g. with the below default "foo.etch.txt" would match, compiles to "foo.txt"
+# template_matcher: "\.etch"

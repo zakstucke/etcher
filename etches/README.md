@@ -14,8 +14,6 @@ In-place, continuous templater. Powered by Jinja.
 
 ## Installation
 
-### Python
-
 Current version: `{{ PY_VERSION }}`
 
 You can install _Etcher_ via [pip](https://pip.pypa.io/) from [PyPI](https://pypi.org/):

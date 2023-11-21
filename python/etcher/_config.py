@@ -1,12 +1,13 @@
 import os
 import pprint
+import re
 import subprocess  # nosec
 import tempfile
 import typing as tp
 
 import yaml
 
-from ._process import StrPath
+from ._process import _DEFAULT_CHILD_FLAG, _DEFAULT_TEMPLATE_MATCHER, StrPath
 
 
 class Config(tp.TypedDict):
@@ -14,7 +15,7 @@ class Config(tp.TypedDict):
     exclude: "list[str]"
     jinja: "dict[str, tp.Any]"
     ignore_files: "list[StrPath]"
-    template_matcher: str
+    template_matcher: re.Pattern
     child_flag: str
 
 
@@ -63,8 +64,22 @@ def _remove_suffix(src: str, suffix: str) -> str:
     return src[: -len(suffix)]
 
 
+avail_config_keys = {
+    "setup",
+    "context",
+    "exclude",
+    "jinja",
+    "ignore_files",
+    "template_matcher",
+    "child_flag",
+}
+
+
 def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) -> Config:
     merged = _dictify(contents)
+    for key in merged.keys():
+        if key not in avail_config_keys:
+            raise ValueError(f"Unknown config key: '{key}'")
 
     setup_commands: "list[str]" = _listify(merged.get("setup", []))
 
@@ -107,13 +122,19 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
                         f"Could not find variable '{var}' in environment. Available variables: {env_dict.keys()}"
                     ) from e
 
+    matcher_str = merged.get("template_matcher", None)
+    if matcher_str is None:
+        template_matcher = _DEFAULT_TEMPLATE_MATCHER
+    else:
+        template_matcher = re.compile(matcher_str)
+
     config: Config = {
         "context": context,
         "ignore_files": _listify(merged.get("ignore_files", [])),
         "exclude": _listify(merged.get("exclude", [])),
         "jinja": _dictify(merged.get("jinja", {})),
-        "child_flag": merged.get("child_flag", "!etch:child"),
-        "template_matcher": merged.get("template_matcher", "etch"),
+        "child_flag": merged.get("child_flag", _DEFAULT_CHILD_FLAG),
+        "template_matcher": template_matcher,
     }
 
     printer(f"Config: \n{pprint.pformat(config)}")

@@ -1,8 +1,11 @@
+import json
+import re
 import typing as tp
 from pathlib import Path
 
 import etcher as etch
 import pytest
+from etcher._process import _DEFAULT_TEMPLATE_MATCHER, _get_lockfile_path
 
 from .tmp_file_manager import TmpFileManager
 
@@ -13,46 +16,43 @@ def test_single_inplace():
 
 
 @pytest.mark.parametrize(
-    "flag,",
+    "flag,should_hit",
     [
-        "!etch:child ",  # Simple space
-        "     !etch:child\n\n    ",  # Newlines etc
+        ("!etch:child ", True),  # Simple space
+        ("  \n\n   !etch:child\n\n    ", True),  # Whitespace before and after should all be fine
+        (
+            # Real content before shouldn't match, preventing the need for escaping when using in e.g. docs.
+            "sdfsdfsd !etch:child",
+            False,
+        ),
     ],
 )
-def test_single_child(flag: str):
+def test_single_child(flag: str, should_hit: bool):
     with TmpFileManager() as manager:
         src = "Hello, {{ var }}!"
         # No suffix needed when being used with a child:
         template = manager.tmpfile(content=src)
-        _check_single(manager, f"{flag} {str(template)}", "Hello, World!", {"var": "World"})
+        contents = f"{flag}{str(template)}"
+        context = {"var": "World"}
+        if should_hit:
+            _check_single(manager, contents, "Hello, World!", context)
+        else:
+            assert etch.process(manager.root_dir, context, writer=manager.writer)["written"] == []
 
 
 def test_direct_file():
-    """Should work when a template/child is passed directly."""
+    """Should raise error when direct file passed."""
     with TmpFileManager() as manager:
-        # In-place:
-        _check_single(
-            manager, "Hello, {{ var }}!", "Hello, World!", {"var": "World"}, template_direct=True
-        )
-
-        # Child:
-        src = "Hello, {{ var }}!"
-        # No suffix needed when being used with a child:
-        template = manager.tmpfile(content=src)
-        _check_single(
-            manager,
-            f"!etch:child {str(template)}",
-            "Hello, World!",
-            {"var": "World"},
-            template_direct=True,
-        )
+        template = manager.tmpfile(content="Hello, {{ var }}!", suffix=".etch.txt")
+        with pytest.raises(ValueError, match="Please specify a directory to search instead"):
+            etch.process(template, {"var": "World"}, writer=manager.writer)
 
 
 def test_custom_matchers():
     """Confirm custom name matcher and child matcher works."""
     with TmpFileManager() as manager:
-        extra_config: "dict[str, str]" = {
-            "template_matcher": "ROOT",
+        extra_config: "dict[str, tp.Any]" = {
+            "template_matcher": re.compile(r"ROOT"),
             "child_flag": "!IAMCHILD",
         }
 
@@ -63,7 +63,7 @@ def test_custom_matchers():
             "Hello, World!",
             {"var": "World"},
             extra_config=extra_config,
-            filename_matcher="ROOT",
+            filename_matcher=re.compile("ROOT"),
         )
 
     with TmpFileManager() as manager:
@@ -77,7 +77,7 @@ def test_custom_matchers():
             "Hello, World!",
             {"var": "World"},
             extra_config=extra_config,
-            filename_matcher="ROOT",
+            filename_matcher=re.compile("ROOT"),
         )
 
 
@@ -168,7 +168,7 @@ def test_gitignore():
         # Gitignore enabled, shouldn't match:
         assert (
             etch.process(
-                template,
+                manager.root_dir,
                 {"var": "World"},
                 ignore_files=[gitignore],
                 writer=manager.writer,
@@ -178,7 +178,7 @@ def test_gitignore():
 
         # Gitignore disabled, should match:
         assert etch.process(
-            template,
+            manager.root_dir,
             {"var": "World"},
             writer=manager.writer,
         )["written"] == [_remove_template(template)]
@@ -214,51 +214,141 @@ def test_unrecognised_root():
         )
 
 
-def test_no_match():
-    """Check no match returns empty list."""
-    # Dir:
-    assert (
-        etch.process(
-            "./tests/",
-            {"var": "World"},
-        )["written"]
-        == []
-    )
-
-    # File:
-    assert (
-        etch.process(
-            "./tests/test_process.py",
-            {"var": "World"},
-        )["written"]
-        == []
-    )
-
-
-def test_identical_nowrite():
-    """Confirm no file is written when the content doesn't change."""
+@pytest.mark.parametrize(
+    "var1,var2,should_write,force",
+    [
+        # No change so shouldn't write:
+        ("World", "World", False, False),
+        # Change, so should write:
+        ("World", "FOO", True, False),
+        # Force should always re-write:
+        ("World", "World", True, True),
+    ],
+)
+def test_lockfile_caching(var1: str, var2: str, should_write: bool, force: bool):
+    """Confirm lockfile functions as it should when valid."""
     with TmpFileManager() as manager:
         contents = "Hello, {{ var }}!"
 
         template = manager.tmpfile(content=contents, suffix=".etch.txt")
-        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
+        result = etch.process(manager.root_dir, {"var": var1}, writer=manager.writer)
         assert result["written"] == [_remove_template(template)]
+        out_file = Path(result["written"][0])
+
+        # Simulate some formatting outside of etch, shouldn't affect the results:
+        with open(out_file, "w") as file:
+            file.write(f"Hello, \n\n{var1}!")
 
         num_writes = manager.files_created
         last_update = Path(result["written"][0]).stat().st_mtime
 
-        # When no change, shouldn't write a second time:
-        assert (
-            etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)["written"] == []
-        )
-        assert manager.files_created == num_writes
-        assert Path(result["written"][0]).stat().st_mtime == last_update
+        # Second run:
+        result = etch.process(manager.root_dir, {"var": var2}, writer=manager.writer, force=force)
+        if should_write:
+            assert result["written"] == [_remove_template(template)]
+            assert manager.files_created == num_writes + 1
+            assert out_file.stat().st_mtime > last_update
+        else:
+            assert result["written"] == []
+            assert manager.files_created == num_writes
+            assert out_file.stat().st_mtime == last_update
 
-        # When does change, should write again:
-        result = etch.process(manager.root_dir, {"var": "ROOO"}, writer=manager.writer)
+
+@pytest.mark.parametrize(
+    "lock_contents,",
+    [
+        "avjsfhds",  # Not valid json
+        "[]",  # valid, but not a dict as expected
+    ],
+)
+def test_corrupt_lockfile(lock_contents: str):
+    """Automatic resetting of the lockfile isn't valid json, or its contents are in the wrong format."""
+    with TmpFileManager() as manager:
+        contents = "Hello, {{ var }}!"
+
+        template = manager.tmpfile(content=contents, suffix=".etch.txt")
+
+        # Corrupt the lockfile:
+        lockfile_path = _get_lockfile_path(manager.root_dir)
+        with open(lockfile_path, "w") as file:
+            file.write(lock_contents)
+
+        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
         assert result["written"] == [_remove_template(template)]
-        assert manager.files_created == num_writes + 1
-        assert Path(result["written"][0]).stat().st_mtime > last_update
+        assert manager.files_created == 2
+
+        # Should have managed to recreate the lockfile:
+        with open(lockfile_path, "r") as file:
+            assert json.load(file) == {
+                # Should be a relative path:
+                str(template.relative_to(manager.root_dir)): "Hello, World!",
+            }
+
+        # If the template is deleted and etch is run again, it should be removed from the lockfile:
+        template.unlink()
+        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
+        assert result["written"] == []
+
+        with open(lockfile_path, "r") as file:
+            assert json.load(file) == {}
+
+
+def test_lockfile_only_write_when_needed():
+    """Confirm the lockfile isn't re-written when nothing's changed. This would break pre-commit."""
+    with TmpFileManager() as manager:
+        contents1 = "Hello, {{ var }}!"
+        contents2 = "Goodbye, {{ var }}!"
+        template1 = manager.tmpfile(content=contents1, suffix=".etch.txt")
+        template2 = manager.tmpfile(content=contents2, suffix=".etch.txt")
+
+        # First run should create rendered files and lockfile:
+        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
+        assert set(result["written"]) == set(
+            [_remove_template(template1), _remove_template(template2)]
+        )
+        assert manager.files_created == 4
+
+        lock_stat = Path(_get_lockfile_path(manager.root_dir)).stat()
+
+        # Second run should change nothing the lockfile should be the same as well.
+        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
+        assert result["written"] == []
+        assert manager.files_created == 4
+
+        # Lockfile edit time shouldn't have changed:
+        assert Path(_get_lockfile_path(manager.root_dir)).stat().st_mtime == lock_stat.st_mtime
+
+        # Modify one of the templates and delete the other, check lockfile is updated:
+        with open(template1, "w") as file:
+            file.write("Updated, {{ var }}!")
+        template2.unlink()
+        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
+        assert result["written"] == [_remove_template(template1)]
+        assert manager.files_created == 5
+        with open(_get_lockfile_path(manager.root_dir), "r") as file:
+            assert json.load(file) == {
+                str(template1.relative_to(manager.root_dir)): "Updated, World!",
+            }
+
+
+def test_two_existing_children_same_root():
+    """Check a bug where the second child wouldn't update as the lockfile had been updated at that point if the files existed beforehand."""
+    with TmpFileManager() as manager:
+        template = manager.tmpfile(content="Hello, {{ var }}!")
+        child_1 = manager.tmpfile(content=f"!etch:child {template}", suffix=".etch.txt")
+        child_2 = manager.tmpfile(content=f"!etch:child {template}", suffix=".etch.txt")
+
+        # Run first time with a var, so both children are written:
+        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
+        assert set(result["written"]) == set([_remove_template(child_1), _remove_template(child_2)])
+
+        # Make sure they both update now the var has changed:
+        result = etch.process(manager.root_dir, {"var": "Goodbye"}, writer=manager.writer)
+        assert set(result["written"]) == set([_remove_template(child_1), _remove_template(child_2)])
+        with open(_remove_template(child_1), "r") as file:
+            assert file.read() == "Hello, Goodbye!"
+        with open(_remove_template(child_2), "r") as file:
+            assert file.read() == "Hello, Goodbye!"
 
 
 def _check_single(
@@ -266,15 +356,14 @@ def _check_single(
     contents: str,
     expected: str,
     context: "dict[str, tp.Any]",
-    filename_matcher: str = "etch",
-    template_direct: bool = False,
+    filename_matcher: "re.Pattern[str]" = _DEFAULT_TEMPLATE_MATCHER,
     extra_config: "tp.Optional[dict[str, tp.Any]]" = None,
 ):
     template = manager.tmpfile(content=contents, suffix=f".{filename_matcher}.txt")
 
     before_files = manager.files_created
     result = etch.process(
-        manager.root_dir if not template_direct else template,
+        manager.root_dir,
         context,
         writer=manager.writer,
         **(extra_config if extra_config is not None else {}),
@@ -297,5 +386,9 @@ def _check_single(
     assert files_created == 1
 
 
-def _remove_template(filepath: Path, filename_matcher: str = "etch") -> Path:
-    return Path(str(filepath).replace(f".{filename_matcher}.", "."))
+def _remove_template(
+    filepath: Path, filename_matcher: "re.Pattern[str]" = _DEFAULT_TEMPLATE_MATCHER
+) -> Path:
+    match = filename_matcher.search(filepath.name)
+    assert match is not None
+    return filepath.with_name(filepath.name.replace(match.group(0), ""))

@@ -1,3 +1,4 @@
+import re
 import subprocess  # nosec
 
 import etcher as etch
@@ -99,7 +100,7 @@ context:
             {"trim_blocks": True, "lstrip_blocks": True},
         ),
         ("child_flag", """child_flag: '!IAMCHILD'""", "!IAMCHILD"),
-        ("template_matcher", """template_matcher: 'ROOT'""", "ROOT"),
+        ("template_matcher", """template_matcher: 'ROOT'""", re.compile("ROOT")),
     ],
 )
 def test_read_config(config_var: str, yaml: str, expected: str):
@@ -117,7 +118,7 @@ def test_read_config(config_var: str, yaml: str, expected: str):
 
 
 def test_incorrect_config():
-    """Confirm can automatically handle yaml/yml, but raises on everything else."""
+    """Confirm can automatically handle yaml/yml, but raises on invalid yaml, or unknown config."""
     with TmpFileManager() as manager:
         assert etch.read_config(
             manager.tmpfile(
@@ -137,6 +138,12 @@ def test_incorrect_config():
         with pytest.raises(FileNotFoundError, match="Could not find config file"):
             etch.read_config(
                 "not/a/real/path.yml",
+                printer=lambda msg: None,
+            )
+
+        with pytest.raises(ValueError, match="Unknown config key: 'unknown'"):
+            etch.read_config(
+                manager.tmpfile("""unknown: 'foo'""", suffix=".yml"),
                 printer=lambda msg: None,
             )
 

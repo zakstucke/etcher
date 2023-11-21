@@ -9,11 +9,15 @@ from ._process import process
 
 def main(
     root: tp.Annotated[
-        str, typer.Option("--root", "-r", help="The target directory/file to compile")
+        str, typer.Option("--root", "-r", help="The target directory to search and compile.")
     ] = ".",
     config_file: tp.Annotated[
-        str, typer.Option("--config", "-c", help="The config file to use")
+        str, typer.Option("--config", "-c", help="The config file to use.")
     ] = "./etch.config.yml",
+    force: tp.Annotated[
+        bool,
+        typer.Option("--force", "-f", help="Force overwrite all files, ignore existing lockfile."),
+    ] = False,
     verbose: tp.Annotated[bool, typer.Option("--verbose", "-v", help="Verbose output")] = False,
 ):
     """External layer on top of process() that supports the yaml config file."""
@@ -30,6 +34,7 @@ def main(
         ignore_files=config["ignore_files"],
         template_matcher=config["template_matcher"],
         child_flag=config["child_flag"],
+        force=force,
         printer=printer if verbose else lambda msg: None,
     )
 
