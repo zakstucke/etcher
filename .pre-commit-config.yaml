@@ -14,6 +14,11 @@ repos:
                 - --write
                 - "./**/*.{js,cjs,jsx,ts,tsx,json,yml,yaml}"
 
+    - repo: https://github.com/zakstucke/etcher
+      rev: 848cf1398b7a75b8d7d9d72f3fc074240d6b6cdd
+      hooks:
+          - id: etch
+
     # Spelling mistakes:
     - repo: https://github.com/codespell-project/codespell
       rev: v2.2.6
@@ -36,7 +41,7 @@ repos:
       rev: v2.11.0
       hooks:
           - id: pretty-format-toml
-            args: [--autofix, --indent, "2", --trailing-commas, --no-sort]
+            args: [--autofix, --trailing-commas, --no-sort, --indent=2]
 
     # Ruff: linting and formatting for python code:
     - repo: https://github.com/astral-sh/ruff-pre-commit

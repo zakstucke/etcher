@@ -22,7 +22,7 @@ def main(
         typer.echo(f"Etcher: {msg}")
 
     config = read_config(config_file, printer=printer if verbose else lambda msg: None)
-    files_processed = process(
+    result = process(
         root,
         context=config["context"],
         exclude=config["exclude"],
@@ -32,7 +32,10 @@ def main(
         child_flag=config["child_flag"],
         printer=printer if verbose else lambda msg: None,
     )
-    typer.echo(f"Etched {len(files_processed)} files.")
+
+    typer.echo(
+        f"Etched {len(result['written'])} changed files. {len(result['identical'])} identical. {len(result['root_templates'])} root templates used."
+    )
 
 
 def cli():  # pragma: no cover

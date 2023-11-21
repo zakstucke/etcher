@@ -13,6 +13,20 @@ def _default_writer(path: pathlib.Path, contents: str) -> None:
         file.write(contents)
 
 
+class ProcessOutput(tp.TypedDict):
+    """The output of the process function.
+
+    Attributes:
+        root_templates (list[pathlib.Path]): The paths of the root templates that were compiled.
+        written (list[pathlib.Path]): The paths of the files that were written.
+        identical (list[pathlib.Path]): The paths of the files that had identical compiled contents and not overwritten.
+    """
+
+    root_templates: tp.List[pathlib.Path]
+    written: tp.List[pathlib.Path]
+    identical: tp.List[pathlib.Path]
+
+
 def process(
     root: StrPath,
     context: "dict[str, tp.Any]",
@@ -23,7 +37,7 @@ def process(
     child_flag: str = "!etch:child",
     writer: tp.Callable[[pathlib.Path, str], None] = _default_writer,
     printer: tp.Callable[[str], None] = lambda msg: None,
-) -> "list[pathlib.Path]":
+) -> ProcessOutput:
     """Reads the recursive contents of target and writes the compiled files.
 
     Args:
@@ -38,7 +52,7 @@ def process(
         printer (callable, optional): The function to print messages, i.e. will print when verbose. Defaults to lambda msg: None.
 
     Returns:
-        list[pathlib.Path]: The paths of the files that were written.
+        ProcessOutput: A dict containing the source templates, written files and identical files.
     """
     environment = Environment(**jinja if jinja is not None else {})  # nosec
 
@@ -69,17 +83,24 @@ def process(
     matcher_with_dots = f".{template_matcher}."
 
     # Find and compile all the templates:
-    outputs: "list[tuple[pathlib.Path, str]]" = []
     if os.path.isfile(root):
         # The match_tree_files fn doesn't work with files, so check in here and return if doesn't match:
         if len(list(spec.match_files([root], negate=True))) == 0:
-            return []
+            return {
+                "root_templates": [],
+                "written": [],
+                "identical": [],
+            }
         # The match_tree_files fn also returns relative paths to root, so mark this a root individual file to handle accordingly later:
         is_individual_file = True
         iterator = [str(root)]
     else:
         is_individual_file = False
         iterator = spec.match_tree_files(root, negate=True)
+
+    root_templates: set[pathlib.Path] = set()
+    identical: tp.List[pathlib.Path] = []
+    outputs: "list[tuple[pathlib.Path, str]]" = []
 
     for index, rel_filepath in enumerate(iterator):
         if index % 100 == 0:
@@ -109,20 +130,31 @@ def process(
             with open(root_template_path, "r") as file:
                 template_contents = file.read().strip()
         else:
+            root_template_path = path
             printer(f"Found in-place template at {path}. Compiling...")
             template_contents = contents
 
+        root_templates.add(root_template_path)
+
         out_path = path.with_name(path.name.replace(matcher_with_dots, "."))
-        outputs.append(
-            (
-                out_path,
-                environment.from_string(template_contents, globals=context).render(),
-            )
-        )
+        compiled = environment.from_string(template_contents, globals=context).render()
+
+        # Don't want to re-write identical files:
+        if out_path.exists():
+            with open(out_path, "r") as file:
+                if file.read() == compiled:
+                    identical.append(out_path)
+                    continue
+
+        outputs.append((out_path, compiled))
 
     # Write the processed files now everything compiled successfully:
     for path, compiled in outputs:
         printer(f"Writing compiled template to {path}.")
         writer(path, compiled)
 
-    return [path for path, _ in outputs]
+    return {
+        "written": [path for path, _ in outputs],
+        "identical": identical,
+        "root_templates": list(root_templates),
+    }

@@ -1,3 +1,5 @@
+import subprocess  # nosec
+
 import etcher as etch
 import pytest
 import typer
@@ -158,6 +160,18 @@ def test_missing_env_var():
             etch.read_config(
                 manager.tmpfile(
                     """context: FOO""",
+                    suffix=".yml",
+                )
+            )
+
+
+def test_failing_setup_errs():
+    """Make sure errors in setup scripts are raised."""
+    with TmpFileManager() as manager:
+        with pytest.raises(subprocess.CalledProcessError, match="returned non-zero exit status"):
+            etch.read_config(
+                manager.tmpfile(
+                    """setup: './dev_scripts/initial_setup.sh I_DONT_EXIST'""",
                     suffix=".yml",
                 )
             )

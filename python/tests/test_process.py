@@ -141,7 +141,7 @@ def test_multiple_mixed_templates():
                     manager.root_dir,
                     {"var": "World"},
                     writer=manager.writer,
-                )
+                )["written"]
             )
             == 2
         )
@@ -166,19 +166,22 @@ def test_gitignore():
         gitignore = manager.tmpfile(content=str(template.name))
 
         # Gitignore enabled, shouldn't match:
-        assert [] == etch.process(
-            template,
-            {"var": "World"},
-            ignore_files=[gitignore],
-            writer=manager.writer,
+        assert (
+            etch.process(
+                template,
+                {"var": "World"},
+                ignore_files=[gitignore],
+                writer=manager.writer,
+            )["written"]
+            == []
         )
 
         # Gitignore disabled, should match:
-        assert [_remove_template(template)] == etch.process(
+        assert etch.process(
             template,
             {"var": "World"},
             writer=manager.writer,
-        )
+        )["written"] == [_remove_template(template)]
 
         assert (
             manager.files_created == 3
@@ -218,7 +221,7 @@ def test_no_match():
         etch.process(
             "./tests/",
             {"var": "World"},
-        )
+        )["written"]
         == []
     )
 
@@ -227,9 +230,35 @@ def test_no_match():
         etch.process(
             "./tests/test_process.py",
             {"var": "World"},
-        )
+        )["written"]
         == []
     )
+
+
+def test_identical_nowrite():
+    """Confirm no file is written when the content doesn't change."""
+    with TmpFileManager() as manager:
+        contents = "Hello, {{ var }}!"
+
+        template = manager.tmpfile(content=contents, suffix=".etch.txt")
+        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
+        assert result["written"] == [_remove_template(template)]
+
+        num_writes = manager.files_created
+        last_update = Path(result["written"][0]).stat().st_mtime
+
+        # When no change, shouldn't write a second time:
+        assert (
+            etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)["written"] == []
+        )
+        assert manager.files_created == num_writes
+        assert Path(result["written"][0]).stat().st_mtime == last_update
+
+        # When does change, should write again:
+        result = etch.process(manager.root_dir, {"var": "ROOO"}, writer=manager.writer)
+        assert result["written"] == [_remove_template(template)]
+        assert manager.files_created == num_writes + 1
+        assert Path(result["written"][0]).stat().st_mtime > last_update
 
 
 def _check_single(
@@ -252,14 +281,15 @@ def _check_single(
     )
 
     # Should return the correct compiled file:
-    assert result == [_remove_template(template, filename_matcher)]
+    assert result["written"] == [_remove_template(template, filename_matcher)]
+    assert result["identical"] == []
 
     # Original shouldn't have changed:
     with open(template, "r") as file:
         assert contents == file.read()
 
     # Compiled should match expected:
-    with open(result[0], "r") as file:
+    with open(result["written"][0], "r") as file:
         assert file.read() == expected
 
     # Should only have created one file:

@@ -1,4 +1,15 @@
-ignore_files: [.gitignore]
+ignore_files:
+    - .gitignore
+
+setup:
+    - export PY_VERSION="$(./dev_scripts/pkg.sh ver_py)"
+
+context:
+    - PY_VERSION
+# EXAMPLE CONFIG:
+# # Git-style ignore files to read, respect & exclude for the search:
+# ignore_files:
+#     - .gitignore
 # # Commands to populate the environment
 # # with extra temporary variables that context will read from.
 # setup:
@@ -12,9 +23,6 @@ ignore_files: [.gitignore]
 #     - FOO
 #     # A wildcard will signify all environment variables should be passed as context:
 #     # - "*" # BE CAREFUL, SECURITY!
-
-# # Git-style ignore files to read, respect & exclude for the search:
-# ignore_files: [.gitignore]
 
 # # Extra git-style rules to respect & exclude for the search:
 # exclude: [tests/, foo.bar.*.txt]
