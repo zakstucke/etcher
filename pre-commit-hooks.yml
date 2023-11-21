@@ -1,0 +1,6 @@
+- id: etcher
+  name: Etch.
+  description: Run the etch command on the repository.
+  entry: etch
+  language: python
+  pass_filenames: false

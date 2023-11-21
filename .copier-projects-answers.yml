@@ -1,22 +1,15 @@
 # Changes here will be overwritten by Copier
-_commit: v0.9.40
+_commit: v0.9.41
 _src_path: https://github.com/zakstucke/template-project
-artifact_domain: foobar
-artifact_domain_owner: "123456"
-artifact_region: foobar
-artifact_repository: foobar
-copyright_year: 2023
 docs_bg_accent_color_hex: "#ffffff"
 docs_bg_color_hex: "#ffffff"
 docs_deploy_type: gh-pages
 docs_primary_accent_color_hex: "#ae82ff"
 docs_primary_color_hex: "#a16eff"
 docs_protected: false
-docs_url: https://zakstucke.github.io/etcher
 docs_used: true
 github_name: etcher
 github_owner_username: zakstucke
-js_private_release: false
 js_used: false
 license: MIT
 project_author: Zachary Stucke
@@ -26,14 +19,11 @@ project_friendly_name: Etcher
 py_folder: python
 py_max_version: 12
 py_min_version: 8
-py_private_release: false
 py_project_name: etcher
 py_public_release: true
-py_rust_private_release: false
 py_rust_used: false
 py_used: true
 py_venv_path: ./python/.venv
-rust_private_release: false
 rust_used: false
 show_sponsor_link: true
 workspace_name: etcher

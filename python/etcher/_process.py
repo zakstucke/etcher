@@ -15,13 +15,14 @@ def _default_writer(path: pathlib.Path, contents: str) -> None:
 
 def process(
     root: StrPath,
-    context: tp.MutableMapping[str, tp.Any],
+    context: "dict[str, tp.Any]",
     exclude: "tp.Optional[list[str]]" = None,
     jinja: "tp.Optional[dict[str, tp.Any]]" = None,
-    gitignore_path: tp.Optional[StrPath] = ".gitignore",
+    ignore_files: "tp.Optional[list[StrPath]]" = None,
     template_matcher: str = "etch",
     child_flag: str = "!etch:child",
     writer: tp.Callable[[pathlib.Path, str], None] = _default_writer,
+    printer: tp.Callable[[str], None] = lambda msg: None,
 ) -> "list[pathlib.Path]":
     """Reads the recursive contents of target and writes the compiled files.
 
@@ -30,31 +31,39 @@ def process(
         context (dict): The globals to pass to the Jinja environment.
         exclude (list[str], optional): Exclude files/directories matching these patterns. Read as git-style ignore patterns. Defaults to [].
         jinja (dict[str, Any], optional): Jinja custom config, used when creating the Jinja Environment. https://jinja.palletsprojects.com/en/3.1.x/api/#jinja2.Environment. Defaults to {}.
-        gitignore_path (pathlike object, optional): Path to the gitignore file. Useful if running from a sub-directory. Set to None to ignore the file. Defaults to '.gitignore'.
+        ignore_files (list[pathlike object], optional): Paths to git-style ignore files, e.g. '.gitignore' to use for exclude patterns. Defaults to None.
         template_matcher (str, optional): The match string to identify in-place templates or placeholders pointing to templates. Defaults to 'etch'. E.g. 'foo.etch.txt'.
         child_flag (str, optional): The match string to identify child templates. Defaults to '!etch:child'. E.g. 'foo.etch.txt' with contents '!etch:child ./templates/template.txt' will be replaced with the compiled contents of 'template.txt'.
         writer (callable, optional): The function to write the compiled files. Useful for testing. Defaults to _default_writer.
+        printer (callable, optional): The function to print messages, i.e. will print when verbose. Defaults to lambda msg: None.
 
     Returns:
         list[pathlib.Path]: The paths of the files that were written.
     """
     environment = Environment(**jinja if jinja is not None else {})  # nosec
 
-    if gitignore_path is not None:
-        try:
-            with open(gitignore_path, "r") as file:
-                gitignore_text = file.read()
-        except FileNotFoundError as e:
-            raise FileNotFoundError(
-                f"Could not find gitignore file at {gitignore_path}. In config, set 'gitignore_path' to a valid path or set 'gitignore_path=None'."
-            ) from e
-    else:
-        gitignore_text = ""
+    ignore_file_texts = []
+    if ignore_files is not None:
+        for filepath in ignore_files:
+            try:
+                with open(filepath, "r") as file:
+                    ignore_file_texts.append(file.read())
+            except FileNotFoundError as e:
+                raise FileNotFoundError(
+                    f"Could not find git-style ignore file at {filepath} specified."
+                ) from e
 
     # Create a matcher from the gitignore and extra includes which will be negated in search:
     spec = pathspec.PathSpec.from_lines(
         pathspec.patterns.GitWildMatchPattern,  # type: ignore
-        gitignore_text.splitlines() + (exclude if exclude is not None else []),
+        [
+            line
+            for group in (
+                [ignore_text.splitlines() for ignore_text in ignore_file_texts]
+                + (exclude if exclude is not None else [])
+            )
+            for line in group
+        ],
     )
 
     matcher_with_dots = f".{template_matcher}."
@@ -72,7 +81,10 @@ def process(
         is_individual_file = False
         iterator = spec.match_tree_files(root, negate=True)
 
-    for rel_filepath in iterator:
+    for index, rel_filepath in enumerate(iterator):
+        if index % 100 == 0:
+            printer(f"Checked {index} non-ignored files. Currently checking {rel_filepath}...")
+
         if matcher_with_dots not in rel_filepath:
             continue
 
@@ -86,6 +98,8 @@ def process(
         if child_flag in contents:
             root_template_path = pathlib.Path(contents.split(child_flag)[1].strip())
 
+            printer(f"Found child at {path}. Root template: {root_template_path}. Compiling...")
+
             # Raise an error if the path doesn't exist:
             if not root_template_path.exists():
                 raise FileNotFoundError(
@@ -95,6 +109,7 @@ def process(
             with open(root_template_path, "r") as file:
                 template_contents = file.read().strip()
         else:
+            printer(f"Found in-place template at {path}. Compiling...")
             template_contents = contents
 
         out_path = path.with_name(path.name.replace(matcher_with_dots, "."))
@@ -107,6 +122,7 @@ def process(
 
     # Write the processed files now everything compiled successfully:
     for path, compiled in outputs:
+        printer(f"Writing compiled template to {path}.")
         writer(path, compiled)
 
     return [path for path, _ in outputs]

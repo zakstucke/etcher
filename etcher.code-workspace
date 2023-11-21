@@ -102,6 +102,7 @@
     "notebook.output.textLineLimit": 100,
     "debug.allowBreakpointsEverywhere": true,
     "files.exclude": {
+      "**/__pypackages__/**": true,
       "**/.pytest_cache/**": true,
       "**/.pytype/**": true,
       "**/.venv/**": true,

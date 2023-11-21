@@ -31,6 +31,13 @@ repos:
                 # Ignore don't error on specific words that always fail: (foo,bar,baz...)
                 - -L=crate
 
+    # Toml formatting - haven't found one that's easily usable as pre-commit hook and vscode extension, so no vscode saving just using this:
+    - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+      rev: v2.11.0
+      hooks:
+          - id: pretty-format-toml
+            args: [--autofix, --indent, "2", --trailing-commas, --no-sort]
+
     # Ruff: linting and formatting for python code:
     - repo: https://github.com/astral-sh/ruff-pre-commit
       rev: v0.1.5

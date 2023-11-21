@@ -6,21 +6,10 @@ import pytest
 
 from .tmp_file_manager import TmpFileManager
 
-"""
-- Gitignore respected
-- Exclude respected
-- Real writer
-"""
-
 
 def test_single_inplace():
     with TmpFileManager() as manager:
         _check_single(manager, "Hello, {{ var }}!", "Hello, World!", {"var": "World"})
-
-        # Also should work if direct file is passed:
-        _check_single(
-            manager, "Hello, {{ var }}!", "Hello, World!", {"var": "World"}, template_direct=True
-        )
 
 
 @pytest.mark.parametrize(
@@ -38,6 +27,93 @@ def test_single_child(flag: str):
         _check_single(manager, f"{flag} {str(template)}", "Hello, World!", {"var": "World"})
 
 
+def test_direct_file():
+    """Should work when a template/child is passed directly."""
+    with TmpFileManager() as manager:
+        # In-place:
+        _check_single(
+            manager, "Hello, {{ var }}!", "Hello, World!", {"var": "World"}, template_direct=True
+        )
+
+        # Child:
+        src = "Hello, {{ var }}!"
+        # No suffix needed when being used with a child:
+        template = manager.tmpfile(content=src)
+        _check_single(
+            manager,
+            f"!etch:child {str(template)}",
+            "Hello, World!",
+            {"var": "World"},
+            template_direct=True,
+        )
+
+
+def test_custom_matchers():
+    """Confirm custom name matcher and child matcher works."""
+    with TmpFileManager() as manager:
+        extra_config: "dict[str, str]" = {
+            "template_matcher": "ROOT",
+            "child_flag": "!IAMCHILD",
+        }
+
+        # In-place:
+        _check_single(
+            manager,
+            "Hello, {{ var }}!",
+            "Hello, World!",
+            {"var": "World"},
+            extra_config=extra_config,
+            filename_matcher="ROOT",
+        )
+
+    with TmpFileManager() as manager:
+        # Child:
+        src = "Hello, {{ var }}!"
+        # No suffix needed when being used with a child:
+        template = manager.tmpfile(content=src)
+        _check_single(
+            manager,
+            f"!IAMCHILD {str(template)}",
+            "Hello, World!",
+            {"var": "World"},
+            extra_config=extra_config,
+            filename_matcher="ROOT",
+        )
+
+
+def test_custom_jinja_config():
+    """Confirm jinja customisation works."""
+    with TmpFileManager() as manager:
+        extra_config: "dict[str, dict[str, str]]" = {
+            "jinja": {
+                "variable_start_string": "[[",
+                "variable_end_string": "]]",
+            },
+        }
+
+        # In-place:
+        _check_single(
+            manager,
+            "Hello, [[ var ]]!",
+            "Hello, World!",
+            {"var": "World"},
+            extra_config=extra_config,
+        )
+
+    with TmpFileManager() as manager:
+        # Child:
+        src = "Hello, [[ var ]]!"
+        # No suffix needed when being used with a child:
+        template = manager.tmpfile(content=src)
+        _check_single(
+            manager,
+            f"!etch:child {str(template)}",
+            "Hello, World!",
+            {"var": "World"},
+            extra_config=extra_config,
+        )
+
+
 def test_missing_src_template():
     """Nice error when child is pointing to an invalid template."""
     with TmpFileManager() as manager:
@@ -46,7 +122,6 @@ def test_missing_src_template():
             etch.process(
                 manager.root_dir,
                 {"var": "World"},
-                gitignore_path=None,
                 writer=manager.writer,
             )
 
@@ -65,7 +140,6 @@ def test_multiple_mixed_templates():
                 etch.process(
                     manager.root_dir,
                     {"var": "World"},
-                    gitignore_path=None,
                     writer=manager.writer,
                 )
             )
@@ -95,7 +169,7 @@ def test_gitignore():
         assert [] == etch.process(
             template,
             {"var": "World"},
-            gitignore_path=gitignore,
+            ignore_files=[gitignore],
             writer=manager.writer,
         )
 
@@ -103,7 +177,6 @@ def test_gitignore():
         assert [_remove_template(template)] == etch.process(
             template,
             {"var": "World"},
-            gitignore_path=None,
             writer=manager.writer,
         )
 
@@ -112,31 +185,13 @@ def test_gitignore():
         ), "Should have created the template, the gitignore, and one compiled file when gitignore disabled."
 
         # Should raise custom error when path to gitignore wrong:
-        with pytest.raises(FileNotFoundError, match="Could not find gitignore file at"):
+        with pytest.raises(FileNotFoundError, match="Could not find git-style ignore file at"):
             etch.process(
                 manager.root_dir,
                 {"var": "World"},
-                gitignore_path="madeup",
+                ignore_files=["madeup"],
                 writer=manager.writer,
             )
-
-
-def test_real_writer():
-    """All other tests use a fake writer for auto cleanup, check the real default write works."""
-    try:
-        with open("./tmp_template.etch.txt", "w") as file:
-            file.write("Hello, {{ var }}!")
-        result = etch.process(
-            "./tmp_template.etch.txt",
-            {"var": "World"},
-            gitignore_path=None,
-        )
-        assert result == [Path("./tmp_template.txt")]
-        with open("./tmp_template.txt", "r") as file:
-            assert file.read() == "Hello, World!"
-    finally:
-        Path("./tmp_template.etch.txt").unlink(missing_ok=True)
-        Path("./tmp_template.txt").unlink(missing_ok=True)
 
 
 def test_unrecognised_root():
@@ -146,7 +201,6 @@ def test_unrecognised_root():
         etch.process(
             "./madeup/",
             {"var": "World"},
-            gitignore_path=None,
         )
 
     # Check file:
@@ -154,7 +208,6 @@ def test_unrecognised_root():
         etch.process(
             "./madeup.txt",
             {"var": "World"},
-            gitignore_path=None,
         )
 
 
@@ -165,7 +218,6 @@ def test_no_match():
         etch.process(
             "./tests/",
             {"var": "World"},
-            gitignore_path=None,
         )
         == []
     )
@@ -175,7 +227,6 @@ def test_no_match():
         etch.process(
             "./tests/test_process.py",
             {"var": "World"},
-            gitignore_path=None,
         )
         == []
     )
@@ -186,20 +237,22 @@ def _check_single(
     contents: str,
     expected: str,
     context: "dict[str, tp.Any]",
+    filename_matcher: str = "etch",
     template_direct: bool = False,
+    extra_config: "tp.Optional[dict[str, tp.Any]]" = None,
 ):
-    template = manager.tmpfile(content=contents, suffix=".etch.txt")
+    template = manager.tmpfile(content=contents, suffix=f".{filename_matcher}.txt")
 
     before_files = manager.files_created
     result = etch.process(
         manager.root_dir if not template_direct else template,
         context,
-        gitignore_path=None,
         writer=manager.writer,
+        **(extra_config if extra_config is not None else {}),
     )
 
     # Should return the correct compiled file:
-    assert result == [_remove_template(template)]
+    assert result == [_remove_template(template, filename_matcher)]
 
     # Original shouldn't have changed:
     with open(template, "r") as file:
@@ -214,5 +267,5 @@ def _check_single(
     assert files_created == 1
 
 
-def _remove_template(filepath: Path) -> Path:
-    return Path(str(filepath).replace(".etch.", "."))
+def _remove_template(filepath: Path, filename_matcher: str = "etch") -> Path:
+    return Path(str(filepath).replace(f".{filename_matcher}.", "."))
