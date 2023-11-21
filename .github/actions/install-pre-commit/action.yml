@@ -14,3 +14,6 @@ runs:
           with:
               path: ~/.cache/pre-commit
               key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+        - name: Make sure pre-commit installed and up to date
+          shell: bash
+          run: pre-commit install --install-hooks
