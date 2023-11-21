@@ -1,130 +1,88 @@
 [build-system]
-requires = ['hatchling']
 build-backend = 'hatchling.build'
+requires = ['hatchling']
+
+[project]
+classifiers = ['Development Status :: 3 - Alpha', 'Intended Audience :: Developers', 'Topic :: Software Development', 'Typing :: Typed', 'Operating System :: POSIX :: Linux', 'Operating System :: Microsoft :: Windows', 'Operating System :: MacOS', 'Programming Language :: Python', 'Programming Language :: Python :: Implementation :: CPython', 'Programming Language :: Python :: 3', 'Programming Language :: Python :: 3 :: Only', 'Programming Language :: Python :: 3.8', 'Programming Language :: Python :: 3.9', 'Programming Language :: Python :: 3.10', 'Programming Language :: Python :: 3.11', 'Programming Language :: Python :: 3.12', 'License :: OSI Approved']
+dependencies = ['pathspec>=0.10.0', 'jinja2>=3.0.0', 'pyyaml>=6.0.0', 'typer[all]>=0.9.0']
+description = 'In-place, continuous templater. Powered by Jinja.'
+name = 'etcher'
+readme = 'README.md'
+requires-python = '>=3.8'
+version = '0.0.2'
+
+[[project.authors]]
+email = 'zakstucke@gmail.com'
+name = 'Zachary Stucke'
+
+[project.license]
+text = 'MIT'
+
+[project.scripts]
+etch = 'etcher.main:cli'
+
+[project.urls]
+Documentation = 'https://zakstucke.github.io/etcher'
+Sourcecode = 'https://github.com/zakstucke/etcher'
+
+[tool]
+
+[tool.coverage]
+
+[tool.coverage.paths]
+source = ['etcher/', '/Users/runner/work/etcher/etcher/etcher/', '/home/runner/work/etcher/etcher/etcher/', 'D:\a\etcher\etcher\etcher']
+tests = ['tests']
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+
+[tool.coverage.run]
+source = ['etcher']
+
+[tool.hatch]
+
+[tool.hatch.build]
+
+[tool.hatch.build.targets]
+
+[tool.hatch.build.targets.sdist]
+include = ['/README.md', '/LICENSE.md', '/etcher', '/tests', '/requirements.txt']
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
-[tool.hatch.build.targets.sdist]
-# limit which files are included in the sdist (.tar.gz) asset,
-# see https://github.com/pydantic/pydantic/pull/4542
-include = [
-  '/README.md',
-  '/LICENSE.md',
-  '/etcher',
-  '/tests',
-  '/requirements.txt',
-]
-
 [tool.pdm]
 
 [tool.pdm.dev-dependencies]
-test = ["pytest>=7.4.2", "coverage[toml]>=7.3.2"]
-qa = [
-  # Ruff etc all linked to repos directly inside pre-commit so no need to add here: (pyright isn't run in pre-commit, so needs to be installed locally)
-  "pyright>=1.1.329",
-]
-dev = ["ipykernel>=6.25.2"]
+dev = ['ipykernel>=6.25.2']
+qa = ['pyright>=1.1.329']
+test = ['pytest>=7.4.2', 'coverage[toml]>=7.3.2']
 
 [tool.pyright]
-venvPath = "."
-venv = ".venv"
-exclude = [
-  "**/__pycache__",
-  "**/.pytest_cache",
-  "**/.pytype",
-  "**/py_stubs",
-  # Only ever expecting these 2 variations:
-  "**/venv",
-  "**/.venv",
-  "**/node_modules",
-  # Huge rust folders
-  "**/target",
-  # Django specific:
-  "**/migrations",
-]
-pythonVersion = "3.8"  # Run using the minimum supported version
-typeCheckingMode = "basic"  # Additional strict rules are enabled manually
-stubPath = "./py_stubs"  # Copy custom stubs such as e.g. django-stubs in here so they are used in vscode
-useLibraryCodeForTypes = true
-reportOptionalSubscript = true
-reportOptionalMemberAccess = true
+deprecateTypingAliases = true
+exclude = ['**/__pycache__', '**/.pytest_cache', '**/.pytype', '**/py_stubs', '**/venv', '**/.venv', '**/node_modules', '**/target', '**/migrations']
+pythonVersion = '3.8'
+reportImportCycles = true
+reportMissingImports = true
+reportMissingTypeStubs = false
 reportOptionalCall = true
-reportOptionalIterable = true
 reportOptionalContextManager = true
+reportOptionalIterable = true
+reportOptionalMemberAccess = true
 reportOptionalOperand = true
+reportOptionalSubscript = true
+reportPrivateImportUsage = false
+reportTypedDictNotRequiredAccess = false
+reportUnknownParameterType = true
 reportUnnecessaryCast = true
 reportUnnecessaryTypeIgnoreComment = false
-reportMissingImports = true
-deprecateTypingAliases = true
-reportMissingTypeStubs = false
-reportPrivateImportUsage = false  # Always useful to access internals of libraries
-reportUnusedExpression = false  # Ruff can handle this
-reportTypedDictNotRequiredAccess = false  # Lots of libraries don't work with this, if they're generating typed dicts in the wrong way, maybe enable in the future
-# Below rules should probably be disabled if lots of errors on an existing project, but good for new:
-reportImportCycles = true
-reportUnknownParameterType = true
-strictListInference = true
+reportUnusedExpression = false
 strictDictionaryInference = true
+strictListInference = true
 strictSetInference = true
-
-[tool.coverage.paths]
-tests = ["tests"]
-source = [
-  'etcher/',
-  # This handles the fact that mac/windows/ubuntu github action runners all have different paths
-  # This tells coverage to treat the paths as identical and not error:
-  '/Users/runner/work/etcher/etcher/etcher/',
-  '/home/runner/work/etcher/etcher/etcher/',
-  'D:\a\etcher\etcher\etcher',
-]
-
-[tool.coverage.run]
-source = ["etcher"]
-
-[tool.coverage.report]
-show_missing = true
-fail_under = 100
-
-[project]
-name = "etcher"
-version = "0.0.0"
-description = "In-place, continuous templater. Powered by Jinja."
-readme = "README.md"
-license = {text = "MIT"}
-authors = [
-  {name = "Zachary Stucke", email = "zakstucke@gmail.com"},
-]
-requires-python = ">=3.8"
-classifiers = [
-  'Development Status :: 3 - Alpha',
-  "Intended Audience :: Developers",
-  "Topic :: Software Development",
-  'Typing :: Typed',
-  'Operating System :: POSIX :: Linux',
-  'Operating System :: Microsoft :: Windows',
-  'Operating System :: MacOS',
-  'Programming Language :: Python',
-  'Programming Language :: Python :: Implementation :: CPython',
-  'Programming Language :: Python :: 3',
-  'Programming Language :: Python :: 3 :: Only',
-  'Programming Language :: Python :: 3.8',
-  'Programming Language :: Python :: 3.9',
-  'Programming Language :: Python :: 3.10',
-  'Programming Language :: Python :: 3.11',
-  'Programming Language :: Python :: 3.12',
-  'License :: OSI Approved',
-]
-dependencies = [
-  "pathspec>=0.10.0",
-  "jinja2>=3.0.0",
-  "pyyaml>=6.0.0",
-  "typer[all]>=0.9.0",
-]
-
-[project.scripts]
-etch = "etcher.main:cli"
-
-[project.urls]
-"Sourcecode" = "https://github.com/zakstucke/etcher"
-"Documentation" = "https://zakstucke.github.io/etcher"
+stubPath = './py_stubs'
+typeCheckingMode = 'basic'
+useLibraryCodeForTypes = true
+venv = '.venv'
+venvPath = '.'
