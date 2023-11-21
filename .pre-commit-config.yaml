@@ -15,7 +15,7 @@ repos:
                 - "./**/*.{js,cjs,jsx,ts,tsx,json,yml,yaml}"
 
     - repo: https://github.com/zakstucke/etcher
-      rev: v0.0.4_py
+      rev: v0.0.5
       hooks:
           - id: etch
 

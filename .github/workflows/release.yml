@@ -141,6 +141,6 @@ jobs:
               with:
                   publish: true
                   tag: "v${{ inputs.py_version }}"
-                  name: "${{ inputs.py_version }}"
+                  name: "v${{ inputs.py_version }}"
               env:
                   GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
