@@ -55,6 +55,8 @@ jobs:
                   message: "chore: bump package versions for release"
                   author_name: github-actions
                   author_email: action@github.com
+                  # Already run pre-commit above, want this to go through no matter what:
+                  commit: --no-verify
 
             - name: get sha
               id: sha
