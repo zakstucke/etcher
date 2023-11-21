@@ -1,4 +1,4 @@
-- id: etcher
+- id: etch
   name: Etch.
   description: Run the etch command on the repository.
   entry: etch
