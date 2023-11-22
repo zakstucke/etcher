@@ -10,8 +10,8 @@
     "prettier.configPath": "./prettier/prettier.config.cjs",
 
 
-    "python.defaultInterpreterPath": "./python/.venv/bin/python",
-    "ruff.path": ["./python/.venv/bin/ruff"],
+    "python.defaultInterpreterPath": "./py/.venv/bin/python",
+    "ruff.path": ["./py/.venv/bin/ruff"],
 
 
 

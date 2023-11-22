@@ -33,13 +33,16 @@ def main(
         jinja=config["jinja"],
         ignore_files=config["ignore_files"],
         template_matcher=config["template_matcher"],
-        child_flag=config["child_flag"],
         force=force,
         printer=printer if verbose else lambda msg: None,
     )
 
     typer.echo(
-        f"Etched {len(result['written'])} changed files. {len(result['identical'])} identical. {len(result['root_templates'])} root templates used."
+        "Etched {} changed files. {} identical. Lockfile {}.".format(
+            len(result["written"]),
+            len(result["identical"]),
+            "modified" if result["lockfile_modified"] else "untouched",
+        )
     )
 
 

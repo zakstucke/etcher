@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier
-_commit: v0.9.48
+_commit: v0.9.49
 _src_path: https://github.com/zakstucke/template-project
 docs_bg_accent_color_hex: "#ffffff"
 docs_bg_color_hex: "#ffffff"
@@ -16,14 +16,14 @@ project_author: Zachary Stucke
 project_author_email: zakstucke@gmail.com
 project_description: In-place, continuous templater. Powered by Jinja.
 project_friendly_name: Etcher
-py_folder: python
+py_folder: py
 py_max_version: 12
 py_min_version: 8
 py_project_name: etcher
 py_public_release: true
 py_rust_used: false
 py_used: true
-py_venv_path: ./python/.venv
+py_venv_path: ./py/.venv
 rust_used: false
 show_sponsor_link: true
 workspace_name: etcher

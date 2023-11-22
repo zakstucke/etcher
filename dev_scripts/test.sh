@@ -27,7 +27,7 @@ qa () {
 }
 
 py () {
-    cd ./python/
+    cd ./py/
     # Check for COVERAGE=False/false, which is set in some workflow runs to make faster:
     if [[ "$COVERAGE" == "False" ]] || [[ "$COVERAGE" == "false" ]]; then
         echo "COVERAGE=False/false, not running coverage"
@@ -41,7 +41,7 @@ py () {
 }
 
 pyright () {
-    cd ./python/
+    cd ./py/
     pdm run pyright .
     cd ..
 }

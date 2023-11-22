@@ -35,7 +35,7 @@ jobs:
               with:
                   python-version: "3.12"
                   cache: true
-                  cache-dependency-path: "python/pdm.lock"
+                  cache-dependency-path: "py/pdm.lock"
             - name: Update Python version
               if: ${{ inputs.py_release }}
               run: |
@@ -128,13 +128,13 @@ jobs:
               with:
                   python-version: "3.12"
                   cache: true
-                  cache-dependency-path: "python/pdm.lock"
+                  cache-dependency-path: "py/pdm.lock"
 
             - name: Publish package publicly to PyPI
               run: |
                   export PDM_PUBLISH_USERNAME="__token__"
                   export PDM_PUBLISH_PASSWORD="${{ secrets.PYPI_TOKEN }}"
-                  pdm publish -p ./python --repository pypi
+                  pdm publish -p ./py --repository pypi
 
             - name: Publish the release notes
               uses: release-drafter/release-drafter@v5

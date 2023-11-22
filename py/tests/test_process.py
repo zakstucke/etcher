@@ -15,29 +15,23 @@ def test_single_inplace():
         _check_single(manager, "Hello, {{ var }}!", "Hello, World!", {"var": "World"})
 
 
-@pytest.mark.parametrize(
-    "flag,should_hit",
-    [
-        ("!etch:child ", True),  # Simple space
-        ("  \n\n   !etch:child\n\n    ", True),  # Whitespace before and after should all be fine
-        (
-            # Real content before shouldn't match, preventing the need for escaping when using in e.g. docs.
-            "sdfsdfsd !etch:child",
-            False,
-        ),
-    ],
-)
-def test_single_child(flag: str, should_hit: bool):
+def test_include_other_template():
     with TmpFileManager() as manager:
-        src = "Hello, {{ var }}!"
-        # No suffix needed when being used with a child:
-        template = manager.tmpfile(content=src)
-        contents = f"{flag}{str(template)}"
-        context = {"var": "World"}
-        if should_hit:
-            _check_single(manager, contents, "Hello, World!", context)
-        else:
-            assert etch.process(manager.root_dir, context, writer=manager.writer)["written"] == []
+        # Source template doesn't need a suffix as that would make it render inplace:
+        other_template = manager.tmpfile(content="Hello, {{ var }}!")
+        other_path = str(other_template.relative_to(manager.root_dir))
+        _check_single(
+            manager,
+            f"[? include '{other_path}' ?]",
+            "Hello, World!",
+            {"var": "World"},
+            extra_config={
+                "jinja": {
+                    "block_start_string": "[?",
+                    "block_end_string": "?]",
+                }
+            },
+        )
 
 
 def test_direct_file():
@@ -49,34 +43,14 @@ def test_direct_file():
 
 
 def test_custom_matchers():
-    """Confirm custom name matcher and child matcher works."""
+    """Confirm custom template matcher works."""
     with TmpFileManager() as manager:
-        extra_config: "dict[str, tp.Any]" = {
-            "template_matcher": re.compile(r"ROOT"),
-            "child_flag": "!IAMCHILD",
-        }
-
-        # In-place:
         _check_single(
             manager,
             "Hello, {{ var }}!",
             "Hello, World!",
             {"var": "World"},
-            extra_config=extra_config,
-            filename_matcher=re.compile("ROOT"),
-        )
-
-    with TmpFileManager() as manager:
-        # Child:
-        src = "Hello, {{ var }}!"
-        # No suffix needed when being used with a child:
-        template = manager.tmpfile(content=src)
-        _check_single(
-            manager,
-            f"!IAMCHILD {str(template)}",
-            "Hello, World!",
-            {"var": "World"},
-            extra_config=extra_config,
+            extra_config={"template_matcher": re.compile(r"ROOT")},
             filename_matcher=re.compile("ROOT"),
         )
 
@@ -84,46 +58,18 @@ def test_custom_matchers():
 def test_custom_jinja_config():
     """Confirm jinja customisation works."""
     with TmpFileManager() as manager:
-        extra_config: "dict[str, dict[str, str]]" = {
-            "jinja": {
-                "variable_start_string": "[[",
-                "variable_end_string": "]]",
-            },
-        }
-
-        # In-place:
         _check_single(
             manager,
             "Hello, [[ var ]]!",
             "Hello, World!",
             {"var": "World"},
-            extra_config=extra_config,
+            extra_config={
+                "jinja": {
+                    "variable_start_string": "[[",
+                    "variable_end_string": "]]",
+                },
+            },
         )
-
-    with TmpFileManager() as manager:
-        # Child:
-        src = "Hello, [[ var ]]!"
-        # No suffix needed when being used with a child:
-        template = manager.tmpfile(content=src)
-        _check_single(
-            manager,
-            f"!etch:child {str(template)}",
-            "Hello, World!",
-            {"var": "World"},
-            extra_config=extra_config,
-        )
-
-
-def test_missing_src_template():
-    """Nice error when child is pointing to an invalid template."""
-    with TmpFileManager() as manager:
-        manager.tmpfile(content="!etch:child madeup.txt", suffix=".etch.txt")
-        with pytest.raises(FileNotFoundError, match="Could not find source template at"):
-            etch.process(
-                manager.root_dir,
-                {"var": "World"},
-                writer=manager.writer,
-            )
 
 
 def test_multiple_mixed_templates():
@@ -132,8 +78,7 @@ def test_multiple_mixed_templates():
         src1 = "Hello, {{ var }}!"
         src2 = "Goodbye, {{ var }}!"
         template_1 = manager.tmpfile(content=src1, suffix=".etch.txt")
-        template_2 = manager.tmpfile(content=src2)  # This one used as a child
-        child = manager.tmpfile(content=f"!etch:child {str(template_2)}", suffix=".etch.txt")
+        template_2 = manager.tmpfile(content=src2, suffix=".etch.txt")
 
         assert (
             len(
@@ -146,14 +91,12 @@ def test_multiple_mixed_templates():
             == 2
         )
 
-        assert (
-            manager.files_created == 5
-        )  # 2 compiled, both templates and the child placeholder original
+        assert manager.files_created == 4  # 2 compiled + both templates being originally created
 
         with open(_remove_template(template_1), "r") as file:
             assert file.read() == "Hello, World!"
 
-        with open(_remove_template(child), "r") as file:
+        with open(_remove_template(template_2), "r") as file:
             assert file.read() == "Goodbye, World!"
 
 
@@ -329,26 +272,6 @@ def test_lockfile_only_write_when_needed():
             assert json.load(file) == {
                 str(template1.relative_to(manager.root_dir)): "Updated, World!",
             }
-
-
-def test_two_existing_children_same_root():
-    """Check a bug where the second child wouldn't update as the lockfile had been updated at that point if the files existed beforehand."""
-    with TmpFileManager() as manager:
-        template = manager.tmpfile(content="Hello, {{ var }}!")
-        child_1 = manager.tmpfile(content=f"!etch:child {template}", suffix=".etch.txt")
-        child_2 = manager.tmpfile(content=f"!etch:child {template}", suffix=".etch.txt")
-
-        # Run first time with a var, so both children are written:
-        result = etch.process(manager.root_dir, {"var": "World"}, writer=manager.writer)
-        assert set(result["written"]) == set([_remove_template(child_1), _remove_template(child_2)])
-
-        # Make sure they both update now the var has changed:
-        result = etch.process(manager.root_dir, {"var": "Goodbye"}, writer=manager.writer)
-        assert set(result["written"]) == set([_remove_template(child_1), _remove_template(child_2)])
-        with open(_remove_template(child_1), "r") as file:
-            assert file.read() == "Hello, Goodbye!"
-        with open(_remove_template(child_2), "r") as file:
-            assert file.read() == "Hello, Goodbye!"
 
 
 def _check_single(

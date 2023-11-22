@@ -1,3 +1,4 @@
+import pathlib
 import re
 import subprocess  # nosec
 
@@ -22,6 +23,8 @@ context:
     - FOO: 'Hello, World!'
     - BAR
 jinja:
+    - block_start_string: "[?"
+    - block_end_string: "?]"
     - variable_start_string: '[['
     - variable_end_string: ']]'
 """,
@@ -31,7 +34,8 @@ jinja:
 
         # Because the template has the suffix, it should render inplace, but the child should also use it and render:
         template = manager.tmpfile(src, suffix=".etch.txt")
-        child = manager.tmpfile(f"!etch:child {template}", suffix=".etch.txt")
+        template_path = pathlib.Path(template).relative_to(manager.root_dir)
+        child = manager.tmpfile(f"[? include '{template_path}' ?]", suffix=".etch.txt")
 
         app = typer.Typer()
         app.command()(main)
@@ -99,7 +103,6 @@ context:
         """,
             {"trim_blocks": True, "lstrip_blocks": True},
         ),
-        ("child_flag", """child_flag: '!IAMCHILD'""", "!IAMCHILD"),
         ("template_matcher", """template_matcher: 'ROOT'""", re.compile("ROOT")),
     ],
 )

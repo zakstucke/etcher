@@ -24,11 +24,11 @@ jobs:
               with:
                   python-version: "3.12"
                   cache: true
-                  cache-dependency-path: "python/pdm.lock"
+                  cache-dependency-path: "py/pdm.lock"
 
             - name: Sync PDM QA
               run: |
-                  pdm sync -p ./python -d -G qa
+                  pdm sync -p ./py -d -G qa
 
             - name: Run QA
               run: |
@@ -95,11 +95,11 @@ jobs:
               with:
                   python-version: ${{ matrix.python }}
                   cache: true
-                  cache-dependency-path: "python/pdm.lock"
+                  cache-dependency-path: "py/pdm.lock"
 
             - name: Install dependencies
               run: |
-                  pdm sync -p ./python -d -G test
+                  pdm sync -p ./py -d -G test
 
             - name: Run tests
               run: |

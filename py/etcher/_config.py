@@ -7,7 +7,7 @@ import typing as tp
 
 import yaml
 
-from ._process import _DEFAULT_CHILD_FLAG, _DEFAULT_TEMPLATE_MATCHER, StrPath
+from ._process import _DEFAULT_TEMPLATE_MATCHER, StrPath
 
 
 class Config(tp.TypedDict):
@@ -16,7 +16,6 @@ class Config(tp.TypedDict):
     jinja: "dict[str, tp.Any]"
     ignore_files: "list[StrPath]"
     template_matcher: re.Pattern
-    child_flag: str
 
 
 def read_config(
@@ -71,7 +70,6 @@ avail_config_keys = {
     "jinja",
     "ignore_files",
     "template_matcher",
-    "child_flag",
 }
 
 
@@ -133,7 +131,6 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
         "ignore_files": _listify(merged.get("ignore_files", [])),
         "exclude": _listify(merged.get("exclude", [])),
         "jinja": _dictify(merged.get("jinja", {})),
-        "child_flag": merged.get("child_flag", _DEFAULT_CHILD_FLAG),
         "template_matcher": template_matcher,
     }
 

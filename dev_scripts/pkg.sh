@@ -29,17 +29,17 @@ ver_py () {
     _ensure_dasel > /dev/null
 
     # -w- means string output with no quotes etc, got from https://github.com/TomWright/dasel/issues/339
-    echo $(dasel -w=- -f ./python/pyproject.toml ".project.version")
+    echo $(dasel -w=- -f ./py/pyproject.toml ".project.version")
 }
 
 # Takes in the version to bump to as only argument
 ver_py_update () {
     _ensure_dasel
 
-    dasel put -t=string -v="$1" -f ./python/pyproject.toml ".project.version"
+    dasel put -t=string -v="$1" -f ./py/pyproject.toml ".project.version"
 
     # Update lockfile:
-    pdm update -p ./python --no-sync
+    pdm update -p ./py --no-sync
 }
 
 

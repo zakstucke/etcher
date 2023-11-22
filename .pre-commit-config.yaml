@@ -50,18 +50,18 @@ repos:
           # Run the formatter.
           - id: ruff-format
             types_or: [python, pyi, jupyter]
-            args: [--config=./python/ruff.toml]
+            args: [--config=./py/ruff.toml]
           # Run the linter.
           - id: ruff
             types_or: [python, pyi, jupyter]
-            args: [--fix, --config=./python/ruff.toml]
+            args: [--fix, --config=./py/ruff.toml]
 
     # Bandit: finds security vulnerabilities in python code:
     - repo: https://github.com/PyCQA/bandit
       rev: "1.7.5"
       hooks:
           - id: bandit
-            args: ["-c", "./python/bandit.yml", "./python"]
+            args: ["-c", "./py/bandit.yml", "./py"]
 
     # Same as check-json from pre-commit, but with json5 support (so comments, trailing commas etc all pass)
     - repo: https://gitlab.com/bmares/check-json5
