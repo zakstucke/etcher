@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#python.etcher.main" class="md-skip">
+        <a href="#py.etcher.main" class="md-skip">
           Skip to content
         </a>
       
@@ -558,7 +558,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#python.etcher.main" class="md-nav__link">
+  <a href="#py.etcher.main" class="md-nav__link">
     <span class="md-ellipsis">
       main
     </span>
@@ -567,7 +567,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#python.etcher.main.cli" class="md-nav__link">
+  <a href="#py.etcher.main.cli" class="md-nav__link">
     <span class="md-ellipsis">
       cli()
     </span>
@@ -576,7 +576,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#python.etcher.main.main" class="md-nav__link">
+  <a href="#py.etcher.main.main" class="md-nav__link">
     <span class="md-ellipsis">
       main()
     </span>
@@ -736,7 +736,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#python.etcher.main" class="md-nav__link">
+  <a href="#py.etcher.main" class="md-nav__link">
     <span class="md-ellipsis">
       main
     </span>
@@ -745,7 +745,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#python.etcher.main.cli" class="md-nav__link">
+  <a href="#py.etcher.main.cli" class="md-nav__link">
     <span class="md-ellipsis">
       cli()
     </span>
@@ -754,7 +754,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#python.etcher.main.main" class="md-nav__link">
+  <a href="#py.etcher.main.main" class="md-nav__link">
     <span class="md-ellipsis">
       main()
     </span>
@@ -786,7 +786,7 @@
 
 
 
-<a id="python.etcher.main"></a>
+<a id="py.etcher.main"></a>
   <div class="doc doc-contents first">
   
       <p>Main entry point for the etcher CLI.</p>
@@ -809,7 +809,7 @@
 
 
 
-<h2 id="python.etcher.main.cli" class="doc doc-heading">
+<h2 id="py.etcher.main.cli" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">cli</span><span class="p">()</span></code>
 
 </h2>
@@ -820,12 +820,12 @@
       <p>CLI entry point.</p>
 
           <details class="quote">
-            <summary>Source code in <code>python/etcher/main.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="k">def</span> <span class="nf">cli</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;CLI entry point.&quot;&quot;&quot;</span>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">typer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
+            <summary>Source code in <code>py/etcher/main.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="k">def</span> <span class="nf">cli</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;CLI entry point.&quot;&quot;&quot;</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="n">typer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -838,7 +838,7 @@
 
 
 
-<h2 id="python.etcher.main.main" class="doc doc-heading">
+<h2 id="py.etcher.main.main" class="doc doc-heading">
           <code class="highlight language-python"><span class="n">main</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">config_file</span><span class="o">=</span><span class="s1">&#39;./etch.config.yml&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h2>
@@ -849,7 +849,7 @@
       <p>External layer on top of process() that supports the yaml config file.</p>
 
           <details class="quote">
-            <summary>Source code in <code>python/etcher/main.py</code></summary>
+            <summary>Source code in <code>py/etcher/main.py</code></summary>
             <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
 <span class="normal"><a href="#__codelineno-0-11">11</a></span>
 <span class="normal"><a href="#__codelineno-0-12">12</a></span>
@@ -883,7 +883,10 @@
 <span class="normal"><a href="#__codelineno-0-40">40</a></span>
 <span class="normal"><a href="#__codelineno-0-41">41</a></span>
 <span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="k">def</span> <span class="nf">main</span><span class="p">(</span>
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11"></a>    <span class="n">root</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Annotated</span><span class="p">[</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12"></a>        <span class="nb">str</span><span class="p">,</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="s2">&quot;--root&quot;</span><span class="p">,</span> <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The target directory to search and compile.&quot;</span><span class="p">)</span>
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13"></a>    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span>
@@ -909,14 +912,17 @@
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>        <span class="n">jinja</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;jinja&quot;</span><span class="p">],</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="n">ignore_files</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;ignore_files&quot;</span><span class="p">],</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="n">template_matcher</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;template_matcher&quot;</span><span class="p">],</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="n">child_flag</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;child_flag&quot;</span><span class="p">],</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>        <span class="n">printer</span><span class="o">=</span><span class="n">printer</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">msg</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="p">)</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="n">typer</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>        <span class="sa">f</span><span class="s2">&quot;Etched </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;written&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> changed files. </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;identical&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> identical. </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;root_templates&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> root templates used.&quot;</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="p">)</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="n">printer</span><span class="o">=</span><span class="n">printer</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">msg</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>    <span class="p">)</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="n">typer</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>        <span class="s2">&quot;Etched </span><span class="si">{}</span><span class="s2"> changed files. </span><span class="si">{}</span><span class="s2"> identical. Lockfile </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>            <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;written&quot;</span><span class="p">]),</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>            <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;identical&quot;</span><span class="p">]),</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>            <span class="s2">&quot;modified&quot;</span> <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;lockfile_modified&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="s2">&quot;untouched&quot;</span><span class="p">,</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>        <span class="p">)</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -936,11 +942,11 @@
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">November 21, 2023</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">November 22, 2023</span>
       
         <br>
         Created:
-        <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">November 21, 2023</span>
+        <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">November 22, 2023</span>
       
     
   </small>

@@ -55,4 +55,4 @@ def autodoc(base_py_path_str: str, out_folder_name: str):
         nav_file.writelines(nav.build_literate_nav())
 
 
-autodoc("./python/etcher", "py_ref")
+autodoc("./py/etcher", "py_ref")
