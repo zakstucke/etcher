@@ -56,6 +56,11 @@ plugins:
                       merge_init_into_class: true
                       inherited_members: true
 
+    - exclude:
+          glob:
+              # Etch files shouldn't be in the output:
+              - "*.etch.*"
+
 markdown_extensions:
     - pymdownx.highlight:
           anchor_linenums: true
@@ -64,7 +69,6 @@ markdown_extensions:
     - admonition
     - pymdownx.details
     - pymdownx.inlinehilite
-    - pymdownx.snippets
     - pymdownx.superfences
 
 nav:

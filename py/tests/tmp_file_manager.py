@@ -1,3 +1,4 @@
+import os
 import pathlib
 import shutil
 import tempfile
@@ -27,12 +28,19 @@ class TmpFileManager:
         self.cleanup()
 
     def tmpfile(
-        self, content: str, suffix: tp.Optional[str] = None, parent: tp.Optional[str] = None
+        self,
+        content: str,
+        suffix: tp.Optional[str] = None,
+        parent: tp.Optional[str] = None,
+        full_name: tp.Optional[str] = None,
     ) -> pathlib.Path:
         """Create a temporary file.
 
         Parameters:
+        - content: The content to write to the temporary file.
+        - suffix: Optional suffix to append to the temporary file. Otherwise will be created with tempfile.
         - parent: Optional directory to create the temporary file in. Otherwise will be placed in root.
+        - full_name: Optional full name of the temporary file, overrides suffix. Otherwise will be created with tempfile.
 
         Returns:
         - The path to the created temporary file.
@@ -43,6 +51,9 @@ class TmpFileManager:
         tmp_file = tempfile.NamedTemporaryFile(delete=False, dir=parent, suffix=suffix)
         with open(tmp_file.name, "w") as file:
             file.write(content)
+
+        if full_name is not None:
+            os.rename(tmp_file.name, os.path.join(parent, full_name))
 
         self.files_created += 1
 

@@ -1,12 +1,14 @@
 # Etcher
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg)][license]
+[![Documentation](https://img.shields.io/badge/Documentation-8A2BE2)](https://zakstucke.github.io/etcher)
 
 [license]: https://github.com/zakstucke/etcher/blob/main/LICENSE.md
 
 [![PyPI](https://img.shields.io/pypi/v/etcher.svg)][pypi status]
 [![Status](https://img.shields.io/pypi/status/etcher.svg)][pypi status]
 [![Python Version](https://img.shields.io/pypi/pyversions/etcher)][pypi status]
+![Coverage](https://img.shields.io/badge/Coverage-100%25-green)
 
 [pypi status]: https://pypi.org/project/etcher/
 

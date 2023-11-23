@@ -1,3 +1,1 @@
-!etch:child
-
-./etches/README.md
+{% include 'etches/README.md' %}

@@ -1,5 +1,4 @@
 import pathlib
-import re
 import subprocess  # nosec
 
 import etcher as etch
@@ -103,7 +102,6 @@ context:
         """,
             {"trim_blocks": True, "lstrip_blocks": True},
         ),
-        ("template_matcher", """template_matcher: 'ROOT'""", re.compile("ROOT")),
     ],
 )
 def test_read_config(config_var: str, yaml: str, expected: str):

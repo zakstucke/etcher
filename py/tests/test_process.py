@@ -1,11 +1,10 @@
 import json
-import re
 import typing as tp
 from pathlib import Path
 
 import etcher as etch
 import pytest
-from etcher._process import _DEFAULT_TEMPLATE_MATCHER, _get_lockfile_path
+from etcher._process import _get_lockfile_path, _get_out_path, _insecure_hash
 
 from .tmp_file_manager import TmpFileManager
 
@@ -42,17 +41,29 @@ def test_direct_file():
             etch.process(template, {"var": "World"}, writer=manager.writer)
 
 
-def test_custom_matchers():
-    """Confirm custom template matcher works."""
+@pytest.mark.parametrize(
+    "filename,should_match,expected_out",
+    [
+        ("test.etch.txt", True, "test.txt"),
+        ("test.etch", True, "test"),
+        (".etch.test", True, ".test"),
+        ("test.etcher.txt", False, ""),
+        ("test.txt", False, ""),
+    ],
+)
+def test_correct_matching(filename: str, should_match: bool, expected_out: str):
+    """Confirm middle and end matchers both work, and things that shouldn't match don't."""
     with TmpFileManager() as manager:
-        _check_single(
-            manager,
-            "Hello, {{ var }}!",
-            "Hello, World!",
-            {"var": "World"},
-            extra_config={"template_matcher": re.compile(r"ROOT")},
-            filename_matcher=re.compile("ROOT"),
-        )
+        # This shouldn't match the default .etch. matcher:
+        manager.tmpfile(content="", full_name=filename)
+        # Print all files in the root dir:
+        print(list(Path(manager.root_dir).glob("*")))
+        result = etch.process(manager.root_dir, {}, writer=manager.writer)["written"]
+        if should_match:
+            assert len(result) == 1
+            assert result[0].name == expected_out
+        else:
+            assert len(result) == 0
 
 
 def test_custom_jinja_config():
@@ -202,6 +213,7 @@ def test_lockfile_caching(var1: str, var2: str, should_write: bool, force: bool)
     [
         "avjsfhds",  # Not valid json
         "[]",  # valid, but not a dict as expected
+        '{"version": "0.0.0", "files": {}}',  # valid, but wrong version
     ],
 )
 def test_corrupt_lockfile(lock_contents: str):
@@ -223,8 +235,10 @@ def test_corrupt_lockfile(lock_contents: str):
         # Should have managed to recreate the lockfile:
         with open(lockfile_path, "r") as file:
             assert json.load(file) == {
-                # Should be a relative path:
-                str(template.relative_to(manager.root_dir)): "Hello, World!",
+                "version": etch.__version__,
+                "files": {
+                    str(template.relative_to(manager.root_dir)): _insecure_hash("Hello, World!"),
+                },
             }
 
         # If the template is deleted and etch is run again, it should be removed from the lockfile:
@@ -233,7 +247,10 @@ def test_corrupt_lockfile(lock_contents: str):
         assert result["written"] == []
 
         with open(lockfile_path, "r") as file:
-            assert json.load(file) == {}
+            assert json.load(file) == {
+                "version": etch.__version__,
+                "files": {},
+            }
 
 
 def test_lockfile_only_write_when_needed():
@@ -270,7 +287,10 @@ def test_lockfile_only_write_when_needed():
         assert manager.files_created == 5
         with open(_get_lockfile_path(manager.root_dir), "r") as file:
             assert json.load(file) == {
-                str(template1.relative_to(manager.root_dir)): "Updated, World!",
+                "version": etch.__version__,
+                "files": {
+                    str(template1.relative_to(manager.root_dir)): _insecure_hash("Updated, World!"),
+                },
             }
 
 
@@ -279,10 +299,9 @@ def _check_single(
     contents: str,
     expected: str,
     context: "dict[str, tp.Any]",
-    filename_matcher: "re.Pattern[str]" = _DEFAULT_TEMPLATE_MATCHER,
     extra_config: "tp.Optional[dict[str, tp.Any]]" = None,
 ):
-    template = manager.tmpfile(content=contents, suffix=f".{filename_matcher}.txt")
+    template = manager.tmpfile(content=contents, suffix=".etch.txt")
 
     before_files = manager.files_created
     result = etch.process(
@@ -293,7 +312,7 @@ def _check_single(
     )
 
     # Should return the correct compiled file:
-    assert result["written"] == [_remove_template(template, filename_matcher)]
+    assert result["written"] == [_remove_template(template)]
     assert result["identical"] == []
 
     # Original shouldn't have changed:
@@ -309,9 +328,9 @@ def _check_single(
     assert files_created == 1
 
 
-def _remove_template(
-    filepath: Path, filename_matcher: "re.Pattern[str]" = _DEFAULT_TEMPLATE_MATCHER
-) -> Path:
-    match = filename_matcher.search(filepath.name)
-    assert match is not None
-    return filepath.with_name(filepath.name.replace(match.group(0), ""))
+def _remove_template(filepath: Path) -> Path:
+    out_path = _get_out_path(filepath)
+    if out_path is None:
+        raise ValueError(f"Could not find matcher in {filepath}")
+
+    return out_path

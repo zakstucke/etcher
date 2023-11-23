@@ -3,6 +3,7 @@ import os
 import pathlib
 import re
 import typing as tp
+from importlib.metadata import version
 
 import pathspec
 from jinja2 import Environment, FileSystemLoader
@@ -29,7 +30,20 @@ class ProcessOutput(tp.TypedDict):
 
 
 _LOCK_FILENAME = ".etch.lock"
-_DEFAULT_TEMPLATE_MATCHER = re.compile(r"\.etch")
+_MIDDLE_MATCHER = re.compile(r"\.etch\.")
+_END_MATCHER = re.compile(r"\.etch$")
+
+
+class Lockfile(tp.TypedDict):
+    version: str
+    files: "dict[str, int]"
+
+
+def _empty_lockfile() -> Lockfile:
+    return {
+        "version": version("etcher"),
+        "files": {},
+    }
 
 
 def process(
@@ -38,7 +52,6 @@ def process(
     exclude: "tp.Optional[list[str]]" = None,
     jinja: "tp.Optional[dict[str, tp.Any]]" = None,
     ignore_files: "tp.Optional[list[StrPath]]" = None,
-    template_matcher: "re.Pattern[str]" = _DEFAULT_TEMPLATE_MATCHER,
     force: bool = False,
     writer: tp.Callable[[pathlib.Path, str], None] = _default_writer,
     printer: tp.Callable[[str], None] = lambda msg: None,
@@ -51,7 +64,6 @@ def process(
         exclude (list[str], optional): Exclude files/directories matching these patterns. Read as git-style ignore patterns. Defaults to `[]`.
         jinja (dict[str, Any], optional): Jinja custom config, used when creating the Jinja Environment. https://jinja.palletsprojects.com/en/3.1.x/api/#jinja2.Environment. Defaults to `{}`.
         ignore_files (list[pathlike object], optional): Paths to git-style ignore files, e.g. '.gitignore' to use for exclude patterns. Defaults to `None`.
-        template_matcher (str, optional): The match filename regex to identify templates. Compiled files will omit the matcher. Defaults to `re.compile(r'\.etch')`. E.g. `foo.etch.txt` would compile to `foo.txt`.
         force (bool, optional): Whether to ignore the lockfile and overwrite all files, refreshing the lockfile. Defaults to `False`.
         writer (callable, optional): The function to write the compiled files. Useful for testing. Defaults to `_default_writer`.
         printer (callable, optional): The function to print messages, i.e. will print when verbose. Defaults to `lambda msg: None`.
@@ -68,30 +80,36 @@ def process(
 
     environment = Environment(**jinja if jinja is not None else {})  # nosec
 
-    lockfile_modified = False
-
-    # The lockfile contains a mapping from template paths to the last compiled versions.
+    # The lockfile contains a mapping from template paths to the last compiled versions in hashed form.
     # This is used to avoid re-writing files that have identical contents to the last compilation.
     # This is the solution to not continuous re-writing when e.g. post processing formatters outside etch work on the file.
     cleaned_lock_path = _get_lockfile_path(root)
-    lockfile: "dict[str, str]" = {}
-    try:
-        if not force and os.path.exists(cleaned_lock_path):
-            with open(cleaned_lock_path, "r") as file:
-                lockfile = json.load(file)
-                if not isinstance(lockfile, dict) or not all(
-                    isinstance(key, str) and isinstance(value, str)
-                    for key, value in lockfile.items()
-                ):
-                    printer("Invalid lockfile. Resetting...")
-                    lockfile = {}
+    maybe_lockfile = None
+    lockfile_valid = False
+    if not force and os.path.exists(cleaned_lock_path):
+        with open(cleaned_lock_path, "r") as file:
+            try:
+                maybe_lockfile = json.load(file)
+            except json.JSONDecodeError:
+                pass
 
-        else:
-            lockfile = {}
-            lockfile_modified = True
-    except json.JSONDecodeError:
-        printer("Invalid lockfile. Resetting...")
-        lockfile = {}
+            if (
+                isinstance(maybe_lockfile, dict)
+                and set(maybe_lockfile.keys()) == {"version", "files"}
+                and all(
+                    isinstance(key, str) and isinstance(value, int)
+                    for key, value in maybe_lockfile["files"].items()
+                )
+                and version("etcher") == maybe_lockfile["version"]
+            ):
+                lockfile_valid = True
+
+    if maybe_lockfile is not None and lockfile_valid:
+        lockfile = tp.cast(Lockfile, maybe_lockfile)
+        lockfile_modified = False
+    else:
+        printer("Invalid or missing lockfile. Starting afresh...")
+        lockfile = _empty_lockfile()
         lockfile_modified = True
 
     ignore_file_texts = []
@@ -133,9 +151,13 @@ def process(
 
         path = pathlib.Path(os.path.join(root, rel_filepath))
 
-        # If doesn't contain the template matcher, or is the lockfile itself, skip:
-        re_groups = template_matcher.search(path.name)
-        if rel_filepath.endswith(cleaned_lock_path.name) or re_groups is None:
+        # Don't match the lockfile:
+        if rel_filepath.endswith(cleaned_lock_path.name):
+            continue
+
+        # If doesn't contain the any of the matchers, skip:
+        out_path = _get_out_path(path)
+        if out_path is None:
             continue
 
         printer(f"Found in-place template at {path}. Compiling...")
@@ -143,24 +165,24 @@ def process(
         with open(path, "r") as file:
             template_contents = file.read()
 
-        out_path = path.with_name(path.name.replace(re_groups.group(0), ""))
         compiled = environment.from_string(template_contents, globals=context).render()
+        hashed = _insecure_hash(compiled)
 
         # Don't want to re-write files that are the same in the lockfile:
-        if out_path.exists() and lockfile.get(rel_filepath, None) == compiled:
+        if out_path.exists() and lockfile["files"].get(rel_filepath, None) == hashed:
             identical.add(out_path)
             continue
 
         # Add changes
         lockfile_modified = True
-        lockfile[rel_filepath] = compiled
+        lockfile["files"][rel_filepath] = hashed
 
         outputs.append((out_path, compiled))
 
     # Remove files from the lockfile that don't seem to exist anymore:
-    for path in list(lockfile.keys()):
+    for path in list(lockfile["files"].keys()):
         if not os.path.exists(os.path.join(root, path)):
-            del lockfile[path]
+            del lockfile["files"][path]
             lockfile_modified = True
 
     # Write the processed files now everything compiled successfully:
@@ -180,5 +202,26 @@ def process(
     }
 
 
+def _get_out_path(path: pathlib.Path) -> tp.Optional[pathlib.Path]:
+    middle_match = _MIDDLE_MATCHER.search(path.name)
+    if middle_match is not None:
+        return path.with_name(path.name.replace(middle_match.group(0), "."))
+
+    end_match = _END_MATCHER.search(path.name)
+    if end_match is not None:
+        return path.with_name(path.name.replace(end_match.group(0), ""))
+
+    return None
+
+
 def _get_lockfile_path(root: StrPath) -> pathlib.Path:
     return pathlib.Path(root).joinpath(f"./{_LOCK_FILENAME}")
+
+
+def _insecure_hash(data: str) -> int:
+    """Simple insecure FNV-1a hash implementation to prevent needing to store the full contents in a lockfile to save on memory and diffs."""
+    hash_value = 0x811C9DC5
+    for byte in data.encode():
+        hash_value ^= byte
+        hash_value *= 0x01000193
+    return hash_value & 0xFFFFFFFF

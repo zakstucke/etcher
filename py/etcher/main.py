@@ -32,7 +32,6 @@ def main(
         exclude=config["exclude"],
         jinja=config["jinja"],
         ignore_files=config["ignore_files"],
-        template_matcher=config["template_matcher"],
         force=force,
         printer=printer if verbose else lambda msg: None,
     )
