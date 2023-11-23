@@ -1,6 +1,6 @@
 repos:
     - repo: https://github.com/zakstucke/etcher
-      rev: v0.0.7
+      rev: v0.0.8
       hooks:
           - id: etch
 
