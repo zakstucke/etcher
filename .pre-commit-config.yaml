@@ -1,4 +1,9 @@
 repos:
+    - repo: https://github.com/zakstucke/etcher
+      rev: v0.0.7
+      hooks:
+          - id: etch
+
     - repo: https://github.com/pre-commit/mirrors-prettier
       rev: "v3.0.3"
       hooks:
@@ -13,11 +18,6 @@ repos:
                 - --list-different
                 - --write
                 - "./**/*.{js,cjs,jsx,ts,tsx,json,yml,yaml}"
-
-    - repo: https://github.com/zakstucke/etcher
-      rev: v0.0.7
-      hooks:
-          - id: etch
 
     # Spelling mistakes:
     - repo: https://github.com/codespell-project/codespell

@@ -194,6 +194,8 @@ def process(
     if lockfile_modified:
         with open(cleaned_lock_path, "w") as file:
             json.dump(lockfile, file, indent=4)
+            # To prevent end of line fixer from changing lock:
+            file.write("\n")
 
     return {
         "written": [path for path, _ in outputs],

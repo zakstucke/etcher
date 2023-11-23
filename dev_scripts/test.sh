@@ -17,10 +17,31 @@ all () {
     ./dev_scripts/test.sh docs
 }
 
+pre_till_success () {
+    # Run pre-commit on all files repetitively until success, but break if not done in 5 gos
+    index=0
+    success=false
+
+    while [ $index -lt 5 ]; do
+        index=$((index+1))
+        echo "pre-commit attempt $index"
+        if pre-commit run --all-files; then
+            success=true
+            break
+        fi
+    done
+
+    if [ "$success" = true ]; then
+        echo "pre-commit succeeded"
+    else
+        echo "pre-commit failed 5 times, something's wrong. Exiting"
+        exit 1
+    fi
+}
+
 # Runs pre-commit and all the static analysis stat_* functions:
 qa () {
-    # Runs the second time in case the first one only failed due to auto fixes:
-    pre-commit run --color=always --all-files || pre-commit run --color=always --all-files
+    pre_till_success
 
     ./dev_scripts/test.sh pyright
 
