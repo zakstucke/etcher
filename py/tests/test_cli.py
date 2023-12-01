@@ -63,6 +63,18 @@ context:
 """,
             {"FOO": "Hello, World!"},
         ),
+        # Same again but without the dashes in the subvalues:
+        (
+            {},
+            "context",
+            """
+context:
+    - FOO:
+        type: cli
+        value: echo "Hello, World!"
+""",
+            {"FOO": "Hello, World!"},
+        ),
         (
             {},
             "context",

@@ -87,8 +87,10 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
         ctx_type: CTX_TYPES_T
         inner_value: tp.Any
         coerce: tp.Optional[COERCE_T] = None
-        if isinstance(value, list) and any(v.get("type", None) for v in value):
-            value = _dictify(value)
+        if (isinstance(value, dict) and "type" in value) or (
+            isinstance(value, list) and any(v.get("type", None) for v in value)
+        ):
+            value = _dictify(value) if not isinstance(value, dict) else value
             if value["type"] not in CTX_TYPES:
                 raise ValueError(
                     f"Unknown context var type: '{value['type']}'. Must be one of {CTX_TYPES}. If this is a conflict with your value, don't use shorthand, use instead e.g. type: 'static', value: ..."
@@ -107,6 +109,8 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
         else:
             ctx_type = "static"
             inner_value = value
+
+        print("HERE", key, ctx_type, inner_value, coerce)
 
         final_val: tp.Any
         if ctx_type == "static":
@@ -130,8 +134,6 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
         if coerce is not None:
             final_val = _coerce(final_val, coerce)
         context[key] = final_val
-
-    printer(f"Context: \n{context}")
 
     config: Config = {
         "context": context,
