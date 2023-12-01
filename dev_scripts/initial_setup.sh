@@ -22,7 +22,7 @@ initial_setup () {
 
     echo "Setting up python..."
     cd py
-    pdm install
+    pdm install -G:all
     cd ..
 
 

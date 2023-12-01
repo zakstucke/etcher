@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "dev", "qa", "test"]
+groups = ["default", "dev", "test"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:bf1d3fe4d86c9567fb333b10b67142f7f1b4d7709d736c6448409f648a636e61"
+content_hash = "sha256:b85739fb6879a543927f5140529f429294ca8daf2a0b17bab9389043fc0476e6"
 
 [[package]]
 name = "appnope"
