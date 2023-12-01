@@ -1,5 +1,7 @@
+import os
 import pathlib
 import subprocess  # nosec
+import typing as tp
 
 import etcher as etch
 import pytest
@@ -16,11 +18,11 @@ def test_entrypoint():
     with TmpFileManager() as manager:
         config = manager.tmpfile(
             """
-setup:
-    - export BAR='Goodbye, World!'
 context:
     - FOO: 'Hello, World!'
-    - BAR
+    - BAR:
+        - type: cli
+        - value: echo "Goodbye, World!"
 jinja:
     - block_start_string: "[?"
     - block_end_string: "?]"
@@ -48,53 +50,95 @@ jinja:
 
 
 @pytest.mark.parametrize(
-    "config_var,yaml,expected",
+    "env,config_var,yaml,expected",
     [
         (
+            {},
             "context",
             """
-setup: 'export FOO=\"Hello, World!\"'
-context: FOO
+context:
+    - FOO:
+        - type: cli
+        - value: echo "Hello, World!"
 """,
             {"FOO": "Hello, World!"},
         ),
         (
+            {},
             "context",
             """
-setup:
-    - 'export FOO=\"Hello, World!\"'
-    - 'export BAR=\"Goodbye, World!\"'
 context:
-    - FOO
-    - BAR
+    - FOO:
+        - type: cli
+        - value:
+            - echo "Ignore me I'm different!"
+            - echo "Hello, World!"
+""",
+            {"FOO": "Hello, World!"},
+        ),
+        (
+            {},
+            "context",
+            """
+context:
+    - FOO:
+        - type: static
+        - value: "Hello, World!"
+""",
+            {"FOO": "Hello, World!"},
+        ),
+        (
+            {"BAR": "abc"},
+            "context",
+            """
+context:
+    - FOO:
+        - type: env
+        - value: BAR
+""",
+            {"FOO": "abc"},
+        ),
+        (
+            {},
+            "context",
+            """
+context:
+    - FOO:
+        - type: cli
+        - value: echo "Hello, World!"
+    - BAR:
+        - type: cli
+        - value: echo "Goodbye, World!"
     - BAZ: 'INLINE'
 """,
             {"FOO": "Hello, World!", "BAR": "Goodbye, World!", "BAZ": "INLINE"},
         ),
-        # Without specifying the var in context, shouldn't show up:
-        ("context", """setup: 'export FOO=\"Hello, World!\"'""", {}),
-        ("ignore_files", """ignore_files: .gitignore""", [".gitignore"]),
+        ({}, "ignore_files", """ignore_files: .gitignore""", [".gitignore"]),
         (
+            {},
             "ignore_files",
             """ignore_files: [.gitignore, ".dockerignore"]""",
             [".gitignore", ".dockerignore"],
         ),
-        ("exclude", """- exclude: '.*'""", [".*"]),
-        ("exclude", """- exclude: ['.*', foo.bar]""", [".*", "foo.bar"]),
+        ({}, "exclude", """- exclude: '.*'""", [".*"]),
+        ({}, "exclude", """- exclude: ['.*', foo.bar]""", [".*", "foo.bar"]),
         (
+            {},
             "exclude",
             """exclude:
                     - '.*'
                     - foo.bar""",
             [".*", "foo.bar"],
         ),
-        ("jinja", """jinja: {'trim_blocks': True}""", {"trim_blocks": True}),
+        ({}, "jinja", """jinja: {'trim_blocks': True}""", {"trim_blocks": True}),
         (
+            {},
             "jinja",
             """jinja: {'trim_blocks': True, 'lstrip_blocks': True}""",
             {"trim_blocks": True, "lstrip_blocks": True},
         ),
         (
+            {},
             "jinja",
             """jinja:
             - trim_blocks: True
@@ -104,9 +148,10 @@ context:
         ),
     ],
 )
-def test_read_config(config_var: str, yaml: str, expected: str):
+def test_read_config(env: "dict[str, str]", config_var: str, yaml: str, expected: str):
     """Confirm various yaml config setups are all read and processed correctly."""
     with TmpFileManager() as manager:
+        os.environ.update(env)
         assert (
             etch.read_config(
                 manager.tmpfile(
@@ -139,47 +184,146 @@ def test_incorrect_config():
         with pytest.raises(FileNotFoundError, match="Could not find config file"):
             etch.read_config(
                 "not/a/real/path.yml",
-                printer=lambda msg: None,
             )
 
         with pytest.raises(ValueError, match="Unknown config key: 'unknown'"):
             etch.read_config(
                 manager.tmpfile("""unknown: 'foo'""", suffix=".yml"),
-                printer=lambda msg: None,
             )
 
-
-def test_wildcard_env():
-    """Confirm a wildcard in context includes all env vars in context."""
-    with TmpFileManager() as manager:
-        config = etch.read_config(
-            manager.tmpfile(
-                """context: '*'""",
-                suffix=".yml",
+        # Missing value when full syntax used:
+        with pytest.raises(ValueError, match="Missing 'value' key"):
+            etch.read_config(
+                manager.tmpfile(
+                    """context:
+                        FOO:
+                            - type: static""",
+                    suffix=".yml",
+                ),
             )
-        )
-        assert len(config["context"]) > 5
+
+        # Unknown type when full syntax used:
+        with pytest.raises(ValueError, match="Unknown context var type"):
+            etch.read_config(
+                manager.tmpfile(
+                    """context:
+                        FOO:
+                            - type: foo
+                            - value: 'bar'""",
+                    suffix=".yml",
+                ),
+            )
+
+        # Unknown coerce type:
+        with pytest.raises(ValueError, match="Unknown coercion type"):
+            etch.read_config(
+                manager.tmpfile(
+                    """context:
+                        FOO:
+                            - type: static
+                            - value: 'bar'
+                            - as: foo""",
+                    suffix=".yml",
+                ),
+            )
 
 
 def test_missing_env_var():
     """Confirm missing env vars included in context raise nice error."""
     with TmpFileManager() as manager:
-        with pytest.raises(ValueError, match="Could not find variable"):
+        with pytest.raises(ValueError, match="Could not find environment variable"):
             etch.read_config(
                 manager.tmpfile(
-                    """context: FOO""",
+                    """context:
+                    FOO:
+                        - type: env
+                        - value: sdfjkdshfs""",
                     suffix=".yml",
                 )
             )
 
 
-def test_failing_setup_errs():
-    """Make sure errors in setup scripts are raised."""
+def test_failing_cli_errs():
+    """Make sure errors in cli scripts are raised."""
     with TmpFileManager() as manager:
         with pytest.raises(subprocess.CalledProcessError, match="returned non-zero exit status"):
             etch.read_config(
                 manager.tmpfile(
-                    """setup: './dev_scripts/initial_setup.sh I_DONT_EXIST'""",
+                    """context:
+                    FOO:
+                        - type: cli
+                        - value: './dev_scripts/initial_setup.sh I_DONT_EXIST'""",
                     suffix=".yml",
                 )
+            )
+
+
+@pytest.mark.parametrize(
+    "as_type,input_val,expected",
+    [
+        ("str", "123", "123"),
+        ("int", "123", 123),
+        ("int", "123.34", 123),
+        ("float", "123.456", 123.456),
+        ("bool", "true", True),
+        ("bool", "True", True),
+        ("bool", "y", True),
+        ("bool", "false", False),
+        ("json", '{"foo": "bar"}', {"foo": "bar"}),
+    ],
+)
+def test_valid_coersion(as_type: tp.Any, input_val: tp.Any, expected: tp.Any):
+    """Confirm value conversion works correctly when valid in all input types."""
+    with TmpFileManager() as manager:
+        yml_versions = [
+            f"""context:
+                FOO:
+                    - type: static
+                    - value: {input_val}
+                    - as: {as_type}""",
+            f"""context:
+                FOO:
+                    - type: env
+                    - value: FOO
+                    - as: {as_type}""",
+            """context:
+                FOO:
+                    - type: cli
+                    - value: 'echo "{}"'
+                    - as: {}""".format(input_val.replace('"', '\\"'), as_type),
+        ]
+        os.environ["FOO"] = input_val
+        for yml_version in yml_versions:
+            assert (
+                etch.read_config(
+                    manager.tmpfile(
+                        yml_version,
+                        suffix=".yml",
+                    ),
+                )["context"]["FOO"]
+                == expected
+            )
+
+
+@pytest.mark.parametrize(
+    "as_type,input_val",
+    [
+        ("bool", "truee"),
+        ("bool", "yess"),
+        ("json", '{"foo"sdafsd'),
+    ],
+)
+def test_invalid_coersion(as_type: str, input_val: str):
+    """Confirm nice error when value conversion fails."""
+    with TmpFileManager() as manager:
+        with pytest.raises(ValueError, match="Could not convert value"):
+            etch.read_config(
+                manager.tmpfile(
+                    f"""context:
+                        FOO:
+                            - type: static
+                            - value: '{input_val}'
+                            - as: {as_type}""",
+                    suffix=".yml",
+                ),
             )

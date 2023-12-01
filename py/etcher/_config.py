@@ -1,7 +1,7 @@
+import json
 import os
 import pprint
 import subprocess  # nosec
-import tempfile
 import typing as tp
 
 import yaml
@@ -62,12 +62,16 @@ def _remove_suffix(src: str, suffix: str) -> str:
 
 
 avail_config_keys = {
-    "setup",
     "context",
     "exclude",
     "jinja",
     "ignore_files",
 }
+
+CTX_TYPES_T = tp.Literal["static", "cli", "env"]
+CTX_TYPES: "set[CTX_TYPES_T]" = {"static", "cli", "env"}
+COERCE_T = tp.Literal["str", "int", "float", "bool", "json"]
+COERCE_TYPES: "set[COERCE_T]" = {"str", "int", "float", "bool", "json"}
 
 
 def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) -> Config:
@@ -76,46 +80,58 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
         if key not in avail_config_keys:
             raise ValueError(f"Unknown config key: '{key}'")
 
-    setup_commands: "list[str]" = _listify(merged.get("setup", []))
-
-    env_dict: "tp.Union[os._Environ, dict[str, str]]"
-    if setup_commands:
-        merged_command = " && ".join(setup_commands)
-
-        # Run the merged command, but save the environment to a temporary file:
-        tmpfile = tempfile.NamedTemporaryFile()
-        try:
-            subprocess.run(merged_command + f" && env > {tmpfile.name}", check=True, shell=True)  # nosec
-            with open(tmpfile.name, "r") as file:
-                env_dict = {}
-                for line in file.read().splitlines():
-                    key, value = line.split("=", 1)
-                    env_dict[key] = value
-        finally:
-            tmpfile.close()
-    else:
-        env_dict = os.environ
+    context_vars = _dictify(merged.get("context", {}))
 
     context: dict[str, tp.Any] = {}
-    context_vars = _listify(merged.get("context", []))
-
-    printer(f"Context vars: {context_vars}")
-
-    for var in context_vars:
-        if isinstance(var, dict):
-            for key, value in var.items():
-                context[key] = value
+    for key, value in context_vars.items():
+        ctx_type: CTX_TYPES_T
+        inner_value: tp.Any
+        coerce: tp.Optional[COERCE_T] = None
+        if isinstance(value, list) and any(v.get("type", None) for v in value):
+            value = _dictify(value)
+            if value["type"] not in CTX_TYPES:
+                raise ValueError(
+                    f"Unknown context var type: '{value['type']}'. Must be one of {CTX_TYPES}. If this is a conflict with your value, don't use shorthand, use instead e.g. type: 'static', value: ..."
+                )
+            ctx_type = value["type"]
+            if "value" not in value:
+                raise ValueError(
+                    f"Missing 'value' key for context var '{key}' when full 'type' syntax used."
+                )
+            inner_value = value["value"]
+            coerce = value.get("as", None)
+            if coerce is not None and coerce not in COERCE_TYPES:
+                raise ValueError(
+                    f"Unknown coercion type: '{coerce}'. 'as' key must be one of {COERCE_TYPES}."
+                )
         else:
-            var = str(var)
-            if var.strip() == "*":
-                context.update(env_dict)
-            else:
-                try:
-                    context[var] = env_dict[var]
-                except KeyError as e:
-                    raise ValueError(
-                        f"Could not find variable '{var}' in environment. Available variables: {env_dict.keys()}"
-                    ) from e
+            ctx_type = "static"
+            inner_value = value
+
+        final_val: tp.Any
+        if ctx_type == "static":
+            final_val = inner_value
+        elif ctx_type == "env":
+            env_val = os.environ.get(inner_value, None)
+            if env_val is None:
+                raise ValueError(
+                    f"Could not find environment variable '{inner_value}' for requested context var '{key}'."
+                )
+            final_val = env_val.strip()
+        elif ctx_type == "cli":
+            cmds = _listify(inner_value)
+            for cmd in cmds[:-1]:
+                subprocess.run(cmd, check=True, shell=True)  # nosec
+            cmd_out = subprocess.check_output(cmds[-1], shell=True).decode()  # nosec
+            final_val = cmd_out.strip()
+        else:  # pragma: no cover
+            raise ValueError(f"Internal err. Unexpected var type: '{ctx_type}'")
+
+        if coerce is not None:
+            final_val = _coerce(final_val, coerce)
+        context[key] = final_val
+
+    printer(f"Context: \n{context}")
 
     config: Config = {
         "context": context,
@@ -153,3 +169,34 @@ def _dictify(contents: tp.Any) -> "dict[str, tp.Any]":
         merged.update(item)
 
     return merged
+
+
+def _coerce(val: tp.Any, coerce: COERCE_T) -> tp.Any:
+    err: Exception
+    if coerce == "str":
+        return str(val)
+    elif coerce == "int":
+        return round(float(str(val).strip()))
+    elif coerce == "float":
+        return float(str(val).strip())
+    elif coerce == "bool":
+        cleaned = str(val).strip().lower()
+        is_true = cleaned in ("true", "1", "yes", "y")
+        if is_true:
+            return True
+        elif cleaned in ("false", "0", "no", "n"):
+            return False
+        else:
+            err = ValueError("Did not match true or false pattern.")
+    elif coerce == "json":
+        try:
+            # Yaml parser will have already decoded, allow the dodgy behaviour of not passing in valid json:
+            if not isinstance(val, str):
+                return val
+            return json.loads(val)
+        except json.JSONDecodeError as e:
+            err = e
+    else:  # pragma: no cover
+        raise ValueError(f"Internal err. Unexpected coercion type: '{coerce}'")
+
+    raise ValueError(f"Could not convert value '{val}' to type '{coerce}'.") from err
