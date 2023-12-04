@@ -128,8 +128,17 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
             cmds = _listify(inner_value)
             for cmd in cmds[:-1]:
                 subprocess.run(cmd, check=True, shell=True)  # nosec
-            cmd_out = subprocess.check_output(cmds[-1], shell=True).decode()  # nosec
+            cmd_out = subprocess.check_output(  # nosec
+                cmds[-1],
+                shell=True,
+                # Also want to capture stderr if coming from stdout:
+                stderr=subprocess.STDOUT,  # nosec
+            ).decode()
             final_val = cmd_out.strip()
+            if final_val == "":
+                raise ValueError(
+                    f"Implicit None, final cli script returned nothing for context var '{key}'. Script in question: '{cmds[-1]}'"
+                )
         else:  # pragma: no cover
             raise ValueError(f"Internal err. Unexpected var type: '{ctx_type}'")
 

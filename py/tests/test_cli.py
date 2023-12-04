@@ -272,6 +272,7 @@ def test_missing_env_var():
 
 def test_failing_cli_errs():
     """Make sure errors in cli scripts are raised."""
+    # Should error when script actually errs:
     with TmpFileManager() as manager:
         with pytest.raises(subprocess.CalledProcessError, match="returned non-zero exit status"):
             etch.read_config(
@@ -280,6 +281,19 @@ def test_failing_cli_errs():
                     FOO:
                         - type: cli
                         - value: './dev_scripts/initial_setup.sh I_DONT_EXIST'""",
+                    suffix=".yml",
+                )
+            )
+
+    # Should error when script returns nothing (implicit None)
+    with TmpFileManager() as manager:
+        with pytest.raises(ValueError, match="Implicit None, final cli script returned nothing"):
+            etch.read_config(
+                manager.tmpfile(
+                    """context:
+                    FOO:
+                        - type: cli
+                        - value: 'echo "hello" >/dev/null'""",
                     suffix=".yml",
                 )
             )
