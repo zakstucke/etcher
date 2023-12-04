@@ -4,7 +4,7 @@ requires = ['hatchling']
 
 [project]
 classifiers = ['Development Status :: 3 - Alpha', 'Intended Audience :: Developers', 'Topic :: Software Development', 'Typing :: Typed', 'Operating System :: POSIX :: Linux', 'Operating System :: Microsoft :: Windows', 'Operating System :: MacOS', 'Programming Language :: Python', 'Programming Language :: Python :: Implementation :: CPython', 'Programming Language :: Python :: 3', 'Programming Language :: Python :: 3 :: Only', 'Programming Language :: Python :: 3.8', 'Programming Language :: Python :: 3.9', 'Programming Language :: Python :: 3.10', 'Programming Language :: Python :: 3.11', 'Programming Language :: Python :: 3.12', 'License :: OSI Approved']
-dependencies = ['pathspec>=0.10.0', 'jinja2>=3.0.0', 'pyyaml>=6.0.0', 'typer[all]>=0.9.0']
+dependencies = ['pathspec>=0.10.0', 'jinja2>=3.0.0', 'pyyaml>=6.0.0', 'typer>=0.9.0']
 description = 'In-place, continuous templater. Powered by Jinja.'
 name = 'etcher'
 readme = 'README.md'

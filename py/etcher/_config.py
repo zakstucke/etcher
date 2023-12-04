@@ -110,17 +110,18 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
             ctx_type = "static"
             inner_value = value
 
-        print("HERE", key, ctx_type, inner_value, coerce)
-
         final_val: tp.Any
         if ctx_type == "static":
             final_val = inner_value
         elif ctx_type == "env":
             env_val = os.environ.get(inner_value, None)
             if env_val is None:
-                raise ValueError(
-                    f"Could not find environment variable '{inner_value}' for requested context var '{key}'."
-                )
+                if isinstance(value, dict) and "default" in value:
+                    env_val = value["default"]
+                else:
+                    raise ValueError(
+                        f"Could not find environment variable '{inner_value}' for requested context var '{key}'."
+                    )
             final_val = env_val.strip()
         elif ctx_type == "cli":
             cmds = _listify(inner_value)

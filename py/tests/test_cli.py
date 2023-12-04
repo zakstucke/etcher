@@ -2,6 +2,7 @@ import os
 import pathlib
 import subprocess  # nosec
 import typing as tp
+from unittest import mock
 
 import etcher as etch
 import pytest
@@ -110,6 +111,32 @@ context:
 """,
             {"FOO": "abc"},
         ),
+        # Should still use env var if available despite default given:
+        (
+            {"BAR": "abc"},
+            "context",
+            """
+context:
+    - FOO:
+        - type: env
+        - value: BAR
+        - default: 'def'
+""",
+            {"FOO": "abc"},
+        ),
+        # Should only use default when no env var:
+        (
+            {},
+            "context",
+            """
+context:
+    - FOO:
+        - type: env
+        - value: BAR
+        - default: 'def'
+""",
+            {"FOO": "def"},
+        ),
         (
             {},
             "context",
@@ -163,16 +190,16 @@ context:
 def test_read_config(env: "dict[str, str]", config_var: str, yaml: str, expected: str):
     """Confirm various yaml config setups are all read and processed correctly."""
     with TmpFileManager() as manager:
-        os.environ.update(env)
-        assert (
-            etch.read_config(
-                manager.tmpfile(
-                    yaml,
-                    suffix=".yml",
-                ),
-            )[config_var]
-            == expected
-        )
+        with mock.patch.dict(os.environ, env):
+            assert (
+                etch.read_config(
+                    manager.tmpfile(
+                        yaml,
+                        suffix=".yml",
+                    ),
+                )[config_var]
+                == expected
+            )
 
 
 def test_incorrect_config():
