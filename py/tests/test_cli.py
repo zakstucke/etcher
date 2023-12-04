@@ -59,18 +59,6 @@ jinja:
             """
 context:
     - FOO:
-        - type: cli
-        - value: echo "Hello, World!"
-""",
-            {"FOO": "Hello, World!"},
-        ),
-        # Same again but without the dashes in the subvalues:
-        (
-            {},
-            "context",
-            """
-context:
-    - FOO:
         type: cli
         value: echo "Hello, World!"
 """,
@@ -82,8 +70,8 @@ context:
             """
 context:
     - FOO:
-        - type: cli
-        - value:
+        type: cli
+        value:
             - echo "Ignore me I'm different!"
             - echo "Hello, World!"
 """,
@@ -95,8 +83,8 @@ context:
             """
 context:
     - FOO:
-        - type: static
-        - value: "Hello, World!"
+        type: static
+        value: "Hello, World!"
 """,
             {"FOO": "Hello, World!"},
         ),
@@ -106,8 +94,8 @@ context:
             """
 context:
     - FOO:
-        - type: env
-        - value: BAR
+        type: env
+        value: BAR
 """,
             {"FOO": "abc"},
         ),
@@ -120,7 +108,7 @@ context:
     - FOO:
         - type: env
         - value: BAR
-        - default: 'def'
+        - default: True
 """,
             {"FOO": "abc"},
         ),
@@ -133,9 +121,9 @@ context:
     - FOO:
         - type: env
         - value: BAR
-        - default: 'def'
+        - default: True
 """,
-            {"FOO": "def"},
+            {"FOO": True},
         ),
         (
             {},
@@ -143,11 +131,11 @@ context:
             """
 context:
     - FOO:
-        - type: cli
-        - value: echo "Hello, World!"
+        type: cli
+        value: echo "Hello, World!"
     - BAR:
-        - type: cli
-        - value: echo "Goodbye, World!"
+        type: cli
+        value: echo "Goodbye, World!"
     - BAZ: 'INLINE'
 """,
             {"FOO": "Hello, World!", "BAR": "Goodbye, World!", "BAZ": "INLINE"},
@@ -180,8 +168,8 @@ context:
             {},
             "jinja",
             """jinja:
-            - trim_blocks: True
-            - lstrip_blocks: True
+            trim_blocks: True
+            lstrip_blocks: True
         """,
             {"trim_blocks": True, "lstrip_blocks": True},
         ),
