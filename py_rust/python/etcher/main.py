@@ -1,5 +1,8 @@
 """Main entry point for the etcher CLI."""
 
+import pprint
+import time
+
 import typer
 import typing_extensions as tp
 
@@ -25,8 +28,12 @@ def main(
     def printer(msg: str) -> None:
         typer.echo(f"Etcher: {msg}")
 
-    config = read_config(config_file, printer=printer if verbose else lambda msg: None)
-    result = process(
+    total_time_start = time.time()
+
+    config, scripting_time = read_config(
+        config_file, printer=printer if verbose else lambda msg: None
+    )
+    result, timing_info = process(
         root,
         context=config["context"],
         exclude=config["exclude"],
@@ -35,6 +42,24 @@ def main(
         force=force,
         printer=printer if verbose else lambda msg: None,
     )
+
+    total_time = time.time() - total_time_start
+    if verbose:
+
+        def clean_time(length: float):
+            return str(round(length * 1000)) + "ms"
+
+        printer(
+            "Timing: \n{}".format(
+                pprint.pformat(
+                    {
+                        "scripting": {k: clean_time(t) for k, t in scripting_time.items()},
+                        **{k: clean_time(t) for k, t in timing_info.items()},
+                        "total": clean_time(total_time),
+                    }
+                )
+            )
+        )
 
     typer.echo(
         "Etched {} changed files. {} identical. Lockfile {}.".format(

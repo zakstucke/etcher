@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import re
+import time
 import typing as tp
 from importlib.metadata import version
 
@@ -55,7 +56,7 @@ def process(
     force: bool = False,
     writer: tp.Callable[[pathlib.Path, str], None] = _default_writer,
     printer: tp.Callable[[str], None] = lambda msg: None,
-) -> ProcessOutput:
+) -> tuple[ProcessOutput, "dict[str, float]"]:
     r"""Reads the recursive contents of target and writes the compiled files.
 
     Args:
@@ -71,6 +72,8 @@ def process(
     Returns:
         ProcessOutput: A dict containing the source templates, written files and identical files.
     """
+    timing_info: "dict[str, float]" = {}
+
     if jinja is None:
         jinja = {}
 
@@ -80,6 +83,7 @@ def process(
 
     environment = Environment(**jinja if jinja is not None else {})  # nosec
 
+    lockfile_start = time.time()
     # The lockfile contains a mapping from template paths to the last compiled versions in hashed form.
     # This is used to avoid re-writing files that have identical contents to the last compilation.
     # This is the solution to not continuous re-writing when e.g. post processing formatters outside etch work on the file.
@@ -111,7 +115,9 @@ def process(
         printer("Invalid or missing lockfile. Starting afresh...")
         lockfile = _empty_lockfile()
         lockfile_modified = True
+    timing_info["lockfile reading/setup"] = time.time() - lockfile_start
 
+    ignore_specification_start = time.time()
     ignore_file_texts = []
     if ignore_files is not None:
         for filepath in ignore_files:
@@ -135,6 +141,7 @@ def process(
             for line in group
         ],
     )
+    timing_info["ignore specification creation"] = time.time() - ignore_specification_start
 
     # Find and compile all the templates:
     if os.path.isfile(root):
@@ -142,9 +149,9 @@ def process(
             f"Root path {root} is a file. Please specify a directory to search instead."
         )
 
-    identical: "set[pathlib.Path]" = set()
-    outputs: "list[tuple[pathlib.Path, str]]" = []
-
+    finding_start = time.time()
+    template_paths: "set[tuple[pathlib.Path, str, pathlib.Path]]" = set()
+    index = 0
     for index, rel_filepath in enumerate(spec.match_tree_files(root, negate=True)):
         if index % 100 == 0:
             printer(f"Checked {index} non-ignored files. Currently checking {rel_filepath}...")
@@ -160,8 +167,17 @@ def process(
         if out_path is None:
             continue
 
-        printer(f"Found in-place template at {path}. Compiling...")
+        printer(f"Found in-place template at {path}.")
+        template_paths.add((path, rel_filepath, out_path))
+    timing_info[
+        "finding (search {} files to find {} templates)".format(index + 1, len(template_paths))
+    ] = time.time() - finding_start
 
+    identical: "set[pathlib.Path]" = set()
+    outputs: "list[tuple[pathlib.Path, str]]" = []
+
+    rendering_start = time.time()
+    for path, rel_filepath, out_path in template_paths:
         with open(path, "r") as file:
             template_contents = file.read()
 
@@ -178,6 +194,7 @@ def process(
         lockfile["files"][rel_filepath] = hashed
 
         outputs.append((out_path, compiled))
+    timing_info["rendering & diffing templates"] = time.time() - rendering_start
 
     # Remove files from the lockfile that don't seem to exist anymore:
     for path in list(lockfile["files"].keys()):
@@ -186,6 +203,7 @@ def process(
             lockfile_modified = True
 
     # Write the processed files now everything compiled successfully:
+    write_start = time.time()
     for path, compiled in outputs:
         printer(f"Writing compiled template to {path}.")
         writer(path, compiled)
@@ -196,12 +214,13 @@ def process(
             json.dump(lockfile, file, indent=4)
             # To prevent end of line fixer from changing lock:
             file.write("\n")
+    timing_info["writing"] = time.time() - write_start
 
     return {
         "written": [path for path, _ in outputs],
         "identical": list(identical),
         "lockfile_modified": lockfile_modified,
-    }
+    }, timing_info
 
 
 def _get_out_path(path: pathlib.Path) -> tp.Optional[pathlib.Path]:

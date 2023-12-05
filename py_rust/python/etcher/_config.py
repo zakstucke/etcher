@@ -2,6 +2,7 @@ import json
 import os
 import pprint
 import subprocess  # nosec
+import time
 import typing as tp
 
 import yaml
@@ -18,7 +19,7 @@ class Config(tp.TypedDict):
 
 def read_config(
     config_path: StrPath, printer: tp.Callable[[str], None] = lambda msg: None
-) -> Config:
+) -> tuple[Config, dict[str, float]]:
     """Reads the config file and returns the config dict.
 
     Args:
@@ -74,7 +75,11 @@ COERCE_T = tp.Literal["str", "int", "float", "bool", "json"]
 COERCE_TYPES: "set[COERCE_T]" = {"str", "int", "float", "bool", "json"}
 
 
-def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) -> Config:
+def _process_config_file(
+    contents: tp.Any, printer: tp.Callable[[str], None]
+) -> tuple[Config, "dict[str, float]"]:
+    scripting_time: "dict[str, float]" = {}
+
     merged = _dictify(contents)
     for key in merged.keys():
         if key not in avail_config_keys:
@@ -125,6 +130,8 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
                         f"Could not find environment variable '{inner_value}' for requested context var '{key}'."
                     )
         elif ctx_type == "cli":
+            scripting_time[key] = 0.0
+            before = time.time()
             cmds = _listify(inner_value)
             for cmd in cmds[:-1]:
                 subprocess.run(cmd, check=True, shell=True)  # nosec
@@ -139,6 +146,8 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
                 raise ValueError(
                     f"Implicit None, final cli script returned nothing for context var '{key}'. Script in question: '{cmds[-1]}'"
                 )
+            after = time.time()
+            scripting_time[key] = after - before
         else:  # pragma: no cover
             raise ValueError(f"Internal err. Unexpected var type: '{ctx_type}'")
 
@@ -155,7 +164,7 @@ def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) ->
 
     printer(f"Config: \n{pprint.pformat(config)}")
 
-    return config
+    return config, scripting_time
 
 
 def _listify(obj: tp.Any) -> tp.Any:
