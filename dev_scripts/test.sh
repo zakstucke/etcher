@@ -22,6 +22,9 @@ pre_till_success () {
     index=0
     success=false
 
+    # Trap interrupts and exit instead of continuing the loop
+    trap "echo Exited!; exit;" SIGINT SIGTERM
+
     while [ $index -lt 5 ]; do
         index=$((index+1))
         echo "pre-commit attempt $index"
