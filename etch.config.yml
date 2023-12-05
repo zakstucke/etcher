@@ -3,8 +3,8 @@ ignore_files:
 
 context:
     - PY_RUST_VERSION:
-      type: cli
-      value: ./dev_scripts/pkg.sh ver_py_rust
+          type: cli
+          value: ./dev_scripts/pkg.sh ver_py_rust
 # EXAMPLE CONFIG:
 # # Git-style ignore files to read, respect & exclude for the search:
 # ignore_files:
