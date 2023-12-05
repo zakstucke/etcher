@@ -75,8 +75,7 @@ nav:
     - Home:
           - index.md
     - Code Reference:
-          # defer to gen-files + literate-nav https://mkdocstrings.github.io/recipes/?h=recip#automatic-code-reference-pages
-          - Python: py_ref/
+          - Rust-backed Python Library: py_rust_ref/
 
     - Contributing:
           - CONTRIBUTING.md

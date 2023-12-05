@@ -15,7 +15,7 @@ jobs:
         needs:
             - qa
             - tests_docs
-            - tests_python
+            - tests_py_rust
 
         steps:
             - name: Decide whether the needed jobs succeeded or failed
@@ -24,7 +24,7 @@ jobs:
               with:
                   jobs: ${{ toJSON(needs) }}
                   # Everything but qa might be skipped if nothing's changed in its folder:
-                  allowed-skips: tests_docs, tests_python,
+                  allowed-skips: tests_docs, tests_py_rust,
     qa:
         runs-on: ubuntu-latest
         steps:
@@ -35,18 +35,6 @@ jobs:
                   python-version: "3.12"
                   cache: pip
             - uses: ./.github/actions/install-pre-commit
-
-            # Python project
-            - name: Set up PDM
-              uses: pdm-project/setup-pdm@v3
-              with:
-                  python-version: "3.12"
-                  cache: true
-                  cache-dependency-path: "py/pdm.lock"
-
-            - name: Install dependencies
-              run: |
-                  pdm sync -p ./py -G:all
 
             - name: Run QA
               run: |
@@ -86,47 +74,50 @@ jobs:
               run: |
                   ./dev_scripts/test.sh docs
 
-    tests_python:
+    tests_py_rust:
         needs: whos_changed
         # Only run if applicable things have changed:
-        if: needs.whos_changed.outputs.py-changed == 'true'
+        if: needs.whos_changed.outputs.py-rust-changed == 'true'
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
                 include:
                     # Ubuntu test on all versions:
-                    - { python: "3.8", os: "ubuntu-latest", coverage: false }
-                    - { python: "3.9", os: "ubuntu-latest", coverage: false }
-                    - { python: "3.10", os: "ubuntu-latest", coverage: false }
-                    - { python: "3.11", os: "ubuntu-latest", coverage: false }
-                    - { python: "3.12", os: "ubuntu-latest", coverage: true } # Only run coverage check on the newest version to save time
+                    - { python: "3.8", os: "ubuntu-latest" }
+                    - { python: "3.9", os: "ubuntu-latest" }
+                    - { python: "3.10", os: "ubuntu-latest" }
+                    - { python: "3.11", os: "ubuntu-latest" }
+                    - { python: "3.12", os: "ubuntu-latest" }
 
                     # Make sure other os types work on newest version:
                     # - { python: "3.12", os: "macOS-latest" } # Mac uses 10x minutes, skipping for now considering devs usually use mac and v similar to linux
-                    - { python: "3.12", os: "windows-latest", coverage: false } # 2x minutes, most different architecture so worth testing
+                    - { python: "3.12", os: "windows-latest" } # 2x minutes, most different architecture so worth testing
 
         steps:
             - uses: actions/checkout@v4
 
-            - name: Set up PDM
-              uses: pdm-project/setup-pdm@v3
+            - name: Install rust toolchain
+              uses: dtolnay/rust-toolchain@nightly
+            - uses: Swatinem/rust-cache@v2
               with:
-                  python-version: ${{ matrix.python }}
-                  cache: true
-                  cache-dependency-path: "py/pdm.lock"
+                  workspaces: "./rust -> target"
 
-            - name: Install dependencies
+            - uses: actions/setup-python@v4
+              with:
+                  python-version: "${{ matrix.python }}"
+
+            - name: Setup venv (problems with the automatic creating in scripts as it uses pipx and for some reason ends with wrong py version)
               run: |
-                  pdm sync -p ./py -G:all
+                  pip install virtualenv
+                  python -m virtualenv ./py_rust/.venv
 
             - name: Run tests (linux)
               if: matrix.os == 'ubuntu-latest'
               run: |
-                  COVERAGE=${{ matrix.coverage }} ./dev_scripts/test.sh py
+                  ./dev_scripts/test.sh py_rust
 
             - name: Run tests (windows)
               if: matrix.os == 'windows-latest'
               run: |
-                  $env:COVERAGE=${{ matrix.coverage }}
-                  bash ./dev_scripts/test.sh py
+                  bash ./dev_scripts/test.sh py_rust

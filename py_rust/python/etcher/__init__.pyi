@@ -1,9 +1,3 @@
-"""Etcher."""
-
-from importlib.metadata import version
-
-__version__ = version("etcher")
-
 from ._config import read_config
 from ._process import process
 

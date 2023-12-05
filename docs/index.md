@@ -10,7 +10,6 @@ In-place, continuous templater. Powered by Jinja.
 [![PyPI](https://img.shields.io/pypi/v/etcher.svg)][pypi status]
 [![Status](https://img.shields.io/pypi/status/etcher.svg)][pypi status]
 [![Python Version](https://img.shields.io/pypi/pyversions/etcher)][pypi status]
-![Coverage](https://img.shields.io/badge/Coverage-100%25-green)
 
 [pypi status]: https://pypi.org/project/etcher/
 
@@ -19,6 +18,12 @@ You can install **Etcher** via [pip](https://pip.pypa.io/) from [PyPI](https://p
 ```console
 pip install etcher
 ```
+
+Binaries are available for:
+
+-   **Linux**: `x86_64`, `aarch64`, `i686`, `armv7l`, `musl-x86_64` & `musl-aarch64`
+-   **MacOS**: `x86_64` & `arm64`
+-   **Windows**: `amd64` & `win32` (NOTE: disabled currently, see build workflow for bug that needs fixing)
 
 ## Usage
 

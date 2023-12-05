@@ -6,13 +6,13 @@ on:
         branches:
             - main
         inputs:
-            py_release:
-                description: "Python Release"
+            py_rust_release:
+                description: "Rust-backed Python Release"
                 type: boolean
                 required: false
                 default: false
-            py_version:
-                description: "Python Version"
+            py_rust_version:
+                description: "Rust-backed Python Version"
                 default: 0.0.0
 
 jobs:
@@ -29,17 +29,15 @@ jobs:
             - uses: actions/setup-python@v4
             - uses: ./.github/actions/install-pre-commit
 
-            - name: Set up PDM
-              if: ${{ inputs.py_release }}
-              uses: pdm-project/setup-pdm@v3
+            - uses: dtolnay/rust-toolchain@nightly
+              if: ${{ inputs.py_rust_release }} || ${{ inputs.rust_release }}
               with:
-                  python-version: "3.12"
-                  cache: true
-                  cache-dependency-path: "py/pdm.lock"
-            - name: Update Python version
-              if: ${{ inputs.py_release }}
+                  components: rustfmt, clippy
+
+            - name: Update Rust-backed Python version
+              if: ${{ inputs.py_rust_release }}
               run: |
-                  ./dev_scripts/pkg.sh ver_py_update ${{ inputs.py_version }}
+                  ./dev_scripts/pkg.sh ver_py_rust_update ${{ inputs.py_rust_version }}
 
             - name: add and format added files with pre-commit
               # Running on staged change only as that's all that's needed, || true as don't want it to fail, just modify
@@ -102,11 +100,20 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    py_release:
-        name: Python Release
+    py_rust_build:
         needs: [commit_versions]
         # Run only if requested:
-        if: ${{ inputs.py_release }}
+        if: ${{ inputs.py_rust_release }}
+        uses: ./.github/workflows/py-rust-build.yml
+        with:
+            new-sha: ${{ needs.commit_versions.outputs.new-sha }}
+
+    py_rust_release:
+        name: Rust-backed Python Library Release
+        # Make needs multiline:
+        needs: [commit_versions, py_rust_build]
+        # Run only if requested:
+        if: ${{ inputs.py_rust_release }}
         runs-on: ubuntu-latest
         permissions:
             contents: write
@@ -116,24 +123,31 @@ jobs:
               with:
                   ref: ${{ needs.commit_versions.outputs.new-sha }}
 
-            - name: Set up PDM
-              uses: pdm-project/setup-pdm@v3
+            - name: get dist artifacts built in py_rust_build job
+              uses: actions/download-artifact@v3
+              with:
+                  name: py_rust_build_files
+                  path: py_rust/dist
+
+            - uses: actions/setup-python@v4
               with:
                   python-version: "3.12"
-                  cache: true
-                  cache-dependency-path: "py/pdm.lock"
+            - run: pip install twine
 
-            - name: Publish package publicly to PyPI
-              run: |
-                  export PDM_PUBLISH_USERNAME="__token__"
-                  export PDM_PUBLISH_PASSWORD="${{ secrets.PYPI_TOKEN }}"
-                  pdm publish -p ./py --repository pypi
+            - name: Make sure release contents seem valid
+              run: twine check py_rust/dist/*
+
+            - name: upload to pypi
+              run: twine upload py_rust/dist/*
+              env:
+                  TWINE_USERNAME: __token__
+                  TWINE_PASSWORD: "${{ secrets.PYPI_TOKEN }}"
 
             - name: Publish the release notes
               uses: release-drafter/release-drafter@v5
               with:
                   publish: true
-                  tag: "v${{ inputs.py_version }}"
-                  name: "v${{ inputs.py_version }}"
+                  tag: "v${{ inputs.py_rust_version }}"
+                  name: "v${{ inputs.py_rust_version }}"
               env:
                   GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

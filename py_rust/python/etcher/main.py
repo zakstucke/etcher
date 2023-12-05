@@ -43,8 +43,3 @@ def main(
             "modified" if result["lockfile_modified"] else "untouched",
         )
     )
-
-
-def cli():  # pragma: no cover
-    """CLI entry point."""
-    typer.run(main)

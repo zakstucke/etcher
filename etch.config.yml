@@ -2,10 +2,9 @@ ignore_files:
     - .gitignore
 
 context:
-    - JS_ALIASES: { "@root": "./etcher", "@scripts": "./scripts" }
-    - PY_VERSION:
+    - PY_RUST_VERSION:
       type: cli
-      value: ./dev_scripts/pkg.sh ver_py
+      value: ./dev_scripts/pkg.sh ver_py_rust
 # EXAMPLE CONFIG:
 # # Git-style ignore files to read, respect & exclude for the search:
 # ignore_files:

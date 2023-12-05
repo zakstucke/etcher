@@ -23,26 +23,26 @@ _ensure_dasel () {
     fi
 }
 
-# Prints the current python package version
-ver_py () {
+
+
+# Prints the current rust-backed python library package version
+ver_py_rust () {
     # Suppressing stdout (but not err in case something goes wrong) as the echo from this fn is used to determine version in scripts
     _ensure_dasel > /dev/null
 
     # -w- means string output with no quotes etc, got from https://github.com/TomWright/dasel/issues/339
-    echo $(dasel -w=- -f ./py/pyproject.toml ".project.version")
+    echo $(dasel -w=- -f ./py_rust/Cargo.toml ".package.version")
 }
 
 # Takes in the version to bump to as only argument
-ver_py_update () {
+ver_py_rust_update () {
     _ensure_dasel
 
-    dasel put -t=string -v="$1" -f ./py/pyproject.toml ".project.version"
+    dasel put -t=string -v="$1" -f ./py_rust/Cargo.toml ".package.version"
 
     # Update lockfile:
-    pdm update -p ./py --no-sync
+    cargo update --manifest-path ./rust/Cargo.toml
 }
-
-
 
 
 

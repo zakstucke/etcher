@@ -12,6 +12,8 @@ initial_setup () {
         curl -fsSL https://bun.sh/install | bash # for macOS, Linux, and WSL
     fi
 
+    # Make sure nightly is installed as needed for formatting in pre-commit:
+    rustup toolchain install nightly
 
     # Make sure the prettier subdir package is all installed:
     cd ./prettier
@@ -28,12 +30,10 @@ initial_setup () {
     PDM_IGNORE_ACTIVE_VENV=True pdm install
     cd ..
 
-    echo "Setting up python..."
-    cd py
-    pdm install -G:all
-    cd ..
 
 
+    echo "Setting up rust backed python project..."
+    ./dev_scripts/py_rust.sh ensure_venv
 }
 
 # Has to come at the end of these files:

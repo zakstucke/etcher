@@ -7,10 +7,10 @@ all () {
     echo "QA..."
     ./dev_scripts/test.sh qa
 
-    echo "Python..."
-    ./dev_scripts/test.sh py
 
 
+    echo "Python Rust..."
+    ./dev_scripts/test.sh py_rust
 
 
     echo "Docs..."
@@ -46,31 +46,32 @@ pre_till_success () {
 qa () {
     pre_till_success
 
-    ./dev_scripts/test.sh pyright
 
 }
 
-py () {
-    cd ./py/
-    # Check for COVERAGE=False/false, which is set in some workflow runs to make faster:
-    if [[ "$COVERAGE" == "False" ]] || [[ "$COVERAGE" == "false" ]]; then
-        echo "COVERAGE=False/false, not running coverage"
-        pdm run pytest $@
+
+
+py_rust () {
+    # Build the package up to date in the specific virtualenv:
+    ./dev_scripts/py_rust.sh install py_rust/.venv
+
+    cd py_rust
+
+    # Activate the target venv: (runs from windows in CI too)
+    if [[ "$OSTYPE" == "msys" ]]; then
+        source .venv/Scripts/activate
     else
-        pdm run coverage run --parallel -m pytest $@
-        pdm run coverage combine
-        pdm run coverage report
+        source .venv/bin/activate
     fi
+
+    cd .. # This type of stuff could be fixed with hellscript
+    ./dev_scripts/utils.sh py_install_if_missing pytest
+    cd py_rust
+
+    python -m pytest $@
+    deactivate
     cd ..
 }
-
-pyright () {
-    cd ./py/
-    pdm run pyright .
-    cd ..
-}
-
-
 
 
 docs () {

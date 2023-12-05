@@ -7,9 +7,9 @@ on:
             docs-changed:
                 description: Whether files relating to docs have changed or not
                 value: ${{ jobs.whos_changed.outputs.docs-changed }}
-            py-changed:
-                description: Whether files relating to py have changed or not
-                value: ${{ jobs.whos_changed.outputs.py-changed }}
+            py-rust-changed:
+                description: Whether files relating to py_rust have changed or not
+                value: ${{ jobs.whos_changed.outputs.py-rust-changed }}
 
 jobs:
     whos_changed:
@@ -17,7 +17,7 @@ jobs:
         # Map the outputs:
         outputs:
             docs-changed: ${{ steps.check.outputs.docs-changed }}
-            py-changed: ${{ steps.check.outputs.py-changed }}
+            py-rust-changed: ${{ steps.check.outputs.py-rust-changed }}
 
         steps:
             - uses: actions/checkout@v4
@@ -31,5 +31,5 @@ jobs:
                       docs-changed:
                         - 'docs/**'
                         - 'mkdocs.yml'
-                      py-changed:
-                        - 'py/**'
+                      py-rust-changed:
+                        - 'py_rust/**'

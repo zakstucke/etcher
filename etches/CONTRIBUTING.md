@@ -39,10 +39,10 @@ Request features on the [Issue Tracker](https://github.com/zakstucke/etcher/issu
 -   Install [`pipx`](https://pypa.github.io/pipx/)
 -   `./dev_scripts/initial_setup.sh initial_setup`
 
-### Python
+### Rust-backed Python library
 
 -   Make sure Python 3.8+ is installed
--   Install [`PDM`](https://pdm.fming.dev/latest/#update-the-pdm-version)
+-   Install [`rust`](https://www.rust-lang.org/tools/install)
 
 ### Running tests
 
