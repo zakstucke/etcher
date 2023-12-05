@@ -12,7 +12,7 @@
       
       
       
-        <link rel="next" href="py_ref/">
+        <link rel="next" href="py_rust_ref/">
       
       
       <link rel="icon" href="assets/images/favicon.png">
@@ -218,7 +218,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="py_ref/" class="md-tabs__link">
+        <a href="py_rust_ref/" class="md-tabs__link">
           
   
   Code Reference
@@ -403,15 +403,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Installation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#usage" class="md-nav__link">
     <span class="md-ellipsis">
       Usage
@@ -531,7 +522,7 @@
             
   
   <span class="md-ellipsis">
-    Python
+    Rust-backed Python Library
   </span>
   
 
@@ -541,7 +532,7 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_1">
             <span class="md-nav__icon md-icon"></span>
-            Python
+            Rust-backed Python Library
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -567,7 +558,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="py_ref/" class="md-nav__link ">
+            <a href="py_rust_ref/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -597,11 +588,31 @@
   
   
     <li class="md-nav__item">
-      <a href="py_ref/main/" class="md-nav__link">
+      <a href="py_rust_ref/main/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     main
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="py_rust_ref/utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    utils
   </span>
   
 
@@ -756,15 +767,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Installation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#usage" class="md-nav__link">
     <span class="md-ellipsis">
       Usage
@@ -821,16 +823,19 @@
 <h1 id="etcher">Etcher</h1>
 <p><a href="https://github.com/zakstucke/etcher/blob/main/LICENSE.md"><img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg" /></a>
 <a href="https://zakstucke.github.io/etcher"><img alt="Documentation" src="https://img.shields.io/badge/Documentation-8A2BE2" /></a></p>
+<p>In-place, continuous templater. Powered by Jinja.</p>
 <p><a href="https://pypi.org/project/etcher/"><img alt="PyPI" src="https://img.shields.io/pypi/v/etcher.svg" /></a>
 <a href="https://pypi.org/project/etcher/"><img alt="Status" src="https://img.shields.io/pypi/status/etcher.svg" /></a>
-<a href="https://pypi.org/project/etcher/"><img alt="Python Version" src="https://img.shields.io/pypi/pyversions/etcher" /></a>
-<img alt="Coverage" src="https://img.shields.io/badge/Coverage-100%25-green" /></p>
-<p>In-place, continuous templater. Powered by Jinja.</p>
-<h2 id="installation">Installation</h2>
-<p>Current version: <code>0.0.8</code></p>
-<p>You can install <em>Etcher</em> via <a href="https://pip.pypa.io/">pip</a> from <a href="https://pypi.org/">PyPI</a>:</p>
+<a href="https://pypi.org/project/etcher/"><img alt="Python Version" src="https://img.shields.io/pypi/pyversions/etcher" /></a></p>
+<p>You can install <strong>Etcher</strong> via <a href="https://pip.pypa.io/">pip</a> from <a href="https://pypi.org/">PyPI</a>:</p>
 <div class="language-console highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">pip install etcher</span>
 </span></code></pre></div>
+<p>Binaries are available for:</p>
+<ul>
+<li><strong>Linux</strong>: <code>x86_64</code>, <code>aarch64</code>, <code>i686</code>, <code>armv7l</code>, <code>musl-x86_64</code> &amp; <code>musl-aarch64</code></li>
+<li><strong>MacOS</strong>: <code>x86_64</code> &amp; <code>arm64</code></li>
+<li><strong>Windows</strong>: <code>amd64</code> &amp; <code>win32</code> (NOTE: disabled currently, see build workflow for bug that needs fixing)</li>
+</ul>
 <h2 id="usage">Usage</h2>
 <p>Please see the <a href="https://zakstucke.github.io/etcher">documentation</a> for details.</p>
 <h2 id="contributing">Contributing</h2>
@@ -838,7 +843,7 @@
 To learn more, see the <a href="CONTRIBUTING/">Contributor Guide</a>.</p>
 <h2 id="license">License</h2>
 <p>Distributed under the terms of the <a href="LICENSE/">MIT license</a>,
-<em>Etcher</em> is free and open source software.</p>
+<strong>Etcher</strong> is free and open source software.</p>
 <h2 id="issues">Issues</h2>
 <p>If you encounter any problems,
 please <a href="https://github.com/zakstucke/etcher/issues">file an issue</a> along with a detailed description.</p>
@@ -848,11 +853,11 @@ please <a href="https://github.com/zakstucke/etcher/issues">file an issue</a> al
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">November 23, 2023</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">December 5, 2023</span>
       
         <br>
         Created:
-        <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">November 23, 2023</span>
+        <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">December 5, 2023</span>
       
     
   </small>
