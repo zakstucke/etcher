@@ -30,10 +30,8 @@ def main(
 
     total_time_start = time.time()
 
-    config, scripting_time = read_config(
-        config_file, printer=printer if verbose else lambda msg: None
-    )
-    result, timing_info = process(
+    config = read_config(config_file, printer=printer if verbose else lambda msg: None)
+    result = process(
         root,
         context=config["context"],
         exclude=config["exclude"],
@@ -53,8 +51,10 @@ def main(
             "Timing: \n{}".format(
                 pprint.pformat(
                     {
-                        "scripting": {k: clean_time(t) for k, t in scripting_time.items()},
-                        **{k: clean_time(t) for k, t in timing_info.items()},
+                        "scripting": {
+                            k: clean_time(t) for k, t in config["scripting_time"].items()
+                        },
+                        **{k: clean_time(t) for k, t in result["timing_info"].items()},
                         "total": clean_time(total_time),
                     }
                 )

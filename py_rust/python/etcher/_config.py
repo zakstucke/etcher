@@ -15,11 +15,12 @@ class Config(tp.TypedDict):
     exclude: "list[str]"
     jinja: "dict[str, tp.Any]"
     ignore_files: "list[StrPath]"
+    scripting_time: "dict[str, float]"
 
 
 def read_config(
     config_path: StrPath, printer: tp.Callable[[str], None] = lambda msg: None
-) -> tuple[Config, dict[str, float]]:
+) -> Config:
     """Reads the config file and returns the config dict.
 
     Args:
@@ -75,9 +76,7 @@ COERCE_T = tp.Literal["str", "int", "float", "bool", "json"]
 COERCE_TYPES: "set[COERCE_T]" = {"str", "int", "float", "bool", "json"}
 
 
-def _process_config_file(
-    contents: tp.Any, printer: tp.Callable[[str], None]
-) -> tuple[Config, "dict[str, float]"]:
+def _process_config_file(contents: tp.Any, printer: tp.Callable[[str], None]) -> Config:
     scripting_time: "dict[str, float]" = {}
 
     merged = _dictify(contents)
@@ -160,11 +159,12 @@ def _process_config_file(
         "ignore_files": _listify(merged.get("ignore_files", [])),
         "exclude": _listify(merged.get("exclude", [])),
         "jinja": _dictify(merged.get("jinja", {})),
+        "scripting_time": scripting_time,
     }
 
     printer(f"Config: \n{pprint.pformat(config)}")
 
-    return config, scripting_time
+    return config
 
 
 def _listify(obj: tp.Any) -> tp.Any:

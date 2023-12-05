@@ -28,6 +28,7 @@ class ProcessOutput(tp.TypedDict):
     written: tp.List[pathlib.Path]
     identical: tp.List[pathlib.Path]
     lockfile_modified: bool
+    timing_info: "dict[str, float]"
 
 
 _LOCK_FILENAME = ".etch.lock"
@@ -56,7 +57,7 @@ def process(
     force: bool = False,
     writer: tp.Callable[[pathlib.Path, str], None] = _default_writer,
     printer: tp.Callable[[str], None] = lambda msg: None,
-) -> tuple[ProcessOutput, "dict[str, float]"]:
+) -> ProcessOutput:
     r"""Reads the recursive contents of target and writes the compiled files.
 
     Args:
@@ -220,7 +221,8 @@ def process(
         "written": [path for path, _ in outputs],
         "identical": list(identical),
         "lockfile_modified": lockfile_modified,
-    }, timing_info
+        "timing_info": timing_info,
+    }
 
 
 def _get_out_path(path: pathlib.Path) -> tp.Optional[pathlib.Path]:
