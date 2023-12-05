@@ -41,7 +41,7 @@ ver_py_rust_update () {
     dasel put -t=string -v="$1" -f ./py_rust/Cargo.toml ".package.version"
 
     # Update lockfile:
-    cargo update --manifest-path ./rust/Cargo.toml
+    cargo update --manifest-path ./py_rust/Cargo.toml
 }
 
 
