@@ -2,42 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://zakstucke.github.io/etcher/</loc>
-         <lastmod>2023-12-05</lastmod>
+         <lastmod>2023-12-20</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://zakstucke.github.io/etcher/CODE_OF_CONDUCT/</loc>
-         <lastmod>2023-12-05</lastmod>
+         <lastmod>2023-12-20</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://zakstucke.github.io/etcher/CONTRIBUTING/</loc>
-         <lastmod>2023-12-05</lastmod>
+         <lastmod>2023-12-20</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://zakstucke.github.io/etcher/LICENSE/</loc>
-         <lastmod>2023-12-05</lastmod>
+         <lastmod>2023-12-20</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://zakstucke.github.io/etcher/py_rust_ref/</loc>
-         <lastmod>2023-12-05</lastmod>
+         <lastmod>2023-12-20</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://zakstucke.github.io/etcher/py_rust_ref/SUMMARY/</loc>
-         <lastmod>2023-12-05</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://zakstucke.github.io/etcher/py_rust_ref/main/</loc>
-         <lastmod>2023-12-05</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://zakstucke.github.io/etcher/py_rust_ref/utils/</loc>
-         <lastmod>2023-12-05</lastmod>
+         <lastmod>2023-12-20</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
