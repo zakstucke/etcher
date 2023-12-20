@@ -1,0 +1,17 @@
+ignore_files = [".gitignore"]
+
+[context.cli]
+PY_RUST_VERSION = {coerce = "str", commands = [
+  "./dev_scripts/pkg.sh ver_py_rust",
+]}
+
+# # Config to pass to Jinja to modify compilation.
+# # https://jinja.palletsprojects.com/en/3.0.x/api/#jinja2.Environment
+# jinja:
+# # (These are the existing defaults for the most common config, more is avail in the link above)
+# block_start_string: "{%"
+# block_end_string: "%}"
+# variable_start_string: "{{"
+# variable_end_string: "}}"
+# comment_start_string: "{#"
+# comment_end_string: "#}"

@@ -36,12 +36,7 @@ classifiers = [
   'Programming Language :: Rust',
   'License :: OSI Approved',
 ]
-dependencies = [
-  'pathspec>=0.10.0',
-  'jinja2>=3.0.0',
-  'pyyaml>=6.0.0',
-  'typer>=0.9.0',
-]
+dependencies = []
 
 [project.urls]
 "Sourcecode" = "https://github.com/zakstucke/etcher"

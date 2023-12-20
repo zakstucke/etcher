@@ -4,6 +4,10 @@ import shutil
 import tempfile
 import typing as tp
 
+import etcher as etch
+
+from .types import InputConfig
+
 
 class TmpFileManager:
     """A context manager for managing temporary files and directories.
@@ -31,7 +35,7 @@ class TmpFileManager:
         self,
         content: str,
         suffix: tp.Optional[str] = None,
-        parent: tp.Optional[str] = None,
+        parent: tp.Optional[tp.Union[str, pathlib.Path]] = None,
         full_name: tp.Optional[str] = None,
     ) -> pathlib.Path:
         """Create a temporary file.
@@ -52,14 +56,24 @@ class TmpFileManager:
         with open(tmp_file.name, "w") as file:
             file.write(content)
 
+        final_path = pathlib.Path(tmp_file.name)
         if full_name is not None:
             os.rename(tmp_file.name, os.path.join(parent, full_name))
+            final_path = pathlib.Path(os.path.join(parent, full_name))
 
         self.files_created += 1
 
-        return pathlib.Path(tmp_file.name)
+        return final_path
 
-    def tmpdir(self, parent: tp.Optional[str] = None) -> pathlib.Path:
+    def create_cfg(self, config: InputConfig) -> pathlib.Path:
+        return self.tmpfile(
+            etch._toml_update("", update=config),
+            suffix=".toml",
+        )
+
+    def tmpdir(
+        self, parent: tp.Optional[str] = None, name: tp.Optional[str] = None
+    ) -> pathlib.Path:
         """Create a temporary directory.
 
         Parameters:
@@ -72,6 +86,10 @@ class TmpFileManager:
             parent = self.root_dir
 
         tmp_dir = tempfile.mkdtemp(dir=parent)
+
+        if name is not None:
+            os.rename(tmp_dir, os.path.join(parent, name))
+            tmp_dir = os.path.join(parent, name)
 
         self.dirs_created += 1
         return pathlib.Path(tmp_dir)

@@ -68,7 +68,9 @@ py_rust () {
     ./dev_scripts/utils.sh py_install_if_missing pytest
     cd py_rust
 
+    cargo test
     python -m pytest $@
+
     deactivate
     cd ..
 }
