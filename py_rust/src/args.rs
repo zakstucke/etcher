@@ -22,7 +22,7 @@ pub fn get_version_info() -> String {
     let inner = || {
         let py_args = get_py_args()?;
         let bin_path = py_args
-            .get(0)
+            .first()
             .ok_or_else(|| err!("Failed to get binary path from args: '{:?}'.", py_args))?
             .clone();
         Ok::<_, TracedErr>(format!("{} ({})", env!("CARGO_PKG_VERSION"), bin_path))
