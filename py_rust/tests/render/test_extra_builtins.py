@@ -2,6 +2,7 @@
 
 import datetime as dt
 import re
+import time
 import typing as tp
 
 import pytest
@@ -39,6 +40,28 @@ class AllBuiltins(tp.TypedDict):
 # Defining with descriptions all inplace, to allow easy documentation building.
 ENGINE_BUILTINS: AllBuiltins = {
     "filters": {
+        # https://docs.rs/minijinja/latest/minijinja/filters/fn.items.html
+        "items": {
+            "description": "Returns a list of pairs (items) from a mapping.\nThis can be used to iterate over keys and values of a mapping at once. This will use the original order of the map.",
+            "tests": [
+                {
+                    "static_ctx": {"users": {"value": {"foo": "bar", "ree": "roo"}}},
+                    "input": "{% for key, value in users|items %}{{ key }}:{{ value }}\n{% endfor %}",
+                    "expected": "foo:bar\nree:roo\n",
+                },
+                # Make sure workarounds for other chars e.g. @ work using json coercion:
+                {
+                    "static_ctx": {
+                        "aliases": {
+                            "value": '{ "@root": "./example_project_js", "@scripts": "./scripts" }',
+                            "coerce": "json",
+                        }
+                    },
+                    "input": "{% for key, value in aliases|items %}{{ key }}:{{ value }}\n{% endfor %}",
+                    "expected": "@root:./example_project_js\n@scripts:./scripts\n",
+                },
+            ],
+        },
         # Only included as extra minijinja feature:
         # https://docs.rs/minijinja/latest/minijinja/filters/fn.tojson.html
         "tojson": {
@@ -94,7 +117,11 @@ ENGINE_BUILTINS: AllBuiltins = {
             "tests": [
                 {
                     "input": "{{ now()|dateformat }}",
-                    "expected": dt.datetime.utcnow().strftime("%b %d %Y"),
+                    # Rust doesn't include the 0 before days like python does, making python act the same:
+                    "expected": "{month_name} {dt.day} {dt.year}".format(
+                        month_name=dt.datetime.utcnow().strftime("%b"),
+                        dt=dt.datetime.utcnow(),
+                    ),
                 },
                 {
                     "input": "{{ \"2018-04-01T15:20:15-07:00\"|dateformat(format='short') }}",
@@ -122,7 +149,11 @@ ENGINE_BUILTINS: AllBuiltins = {
             "tests": [
                 {
                     "input": "{{ now()|datetimeformat }}",
-                    "expected": dt.datetime.utcnow().strftime("%b %d %Y %H:%M"),
+                    # Rust doesn't include the 0 before days like python does, making python act the same:
+                    "expected": "{month_name} {dt.day} {dt.year} {dt.hour}:{dt.minute}".format(
+                        month_name=dt.datetime.utcnow().strftime("%b"),
+                        dt=dt.datetime.utcnow(),
+                    ),
                 },
                 {
                     "input": "{{ \"2018-04-01T15:20:15-07:00\"|datetimeformat(format='short') }}",
@@ -147,6 +178,16 @@ ENGINE_BUILTINS: AllBuiltins = {
 }
 
 
+def wait_for_new_minute():
+    """If less than a second before the next minute, wait for the next minute to start.
+
+    Prevents inaccuracy in tests that rely on the current minute. Not easy to mock as going between python and rust.
+    """
+    now = dt.datetime.utcnow()
+    if now.second > 58:
+        time.sleep(60 - now.second)
+
+
 @pytest.mark.parametrize(
     "name,info,test_info",
     [
@@ -158,6 +199,7 @@ ENGINE_BUILTINS: AllBuiltins = {
 def test_extra_builtin_functions(name: str, info: FilterBuiltin, test_info: BuiltinTestcase):
     """Confirm all builtin expected filters work."""
     with TmpFileManager() as manager:
+        wait_for_new_minute()
         check_single(
             manager,
             manager.create_cfg({"context": {"static": test_info.get("static_ctx", {})}}),
@@ -179,6 +221,7 @@ def test_extra_builtin_functions(name: str, info: FilterBuiltin, test_info: Buil
 def test_extra_builtin_filters(name: str, info: FilterBuiltin, test_info: BuiltinTestcase):
     """Confirm all builtin expected filters work."""
     with TmpFileManager() as manager:
+        wait_for_new_minute()
         check_single(
             manager,
             manager.create_cfg({"context": {"static": test_info.get("static_ctx", {})}}),

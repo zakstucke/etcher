@@ -39,8 +39,8 @@ pub fn run() -> Result<(), TracedErr> {
         msg_prefix: Some("etch".to_string()),
         level_filter: args.log_level_args.level_filter(),
         include_ts_till: Some(log::LevelFilter::Debug),
-        include_location_till: None,
         variant: bitbazaar::logging::LogTargetVariant::Stdout {},
+        ..Default::default()
     }])?;
     logger.apply()?;
 
