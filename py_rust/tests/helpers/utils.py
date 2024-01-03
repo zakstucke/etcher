@@ -31,8 +31,9 @@ def check_single(
     config_file: tp.Union[str, pathlib.Path],
     contents: str,
     expected: tp.Union[str, tp.Callable[[str], bool]],
+    file_type="txt",
 ):
-    template = manager.tmpfile(content=contents, suffix=".etch.txt")
+    template = manager.tmpfile(content=contents, suffix=".etch.{}".format(file_type))
 
     rendered_info = cli.render(manager.root_dir, config_file)
     result = rendered_info["debug"]

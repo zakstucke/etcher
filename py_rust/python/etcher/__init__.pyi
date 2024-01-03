@@ -37,4 +37,6 @@ def _toml_update(
 ) -> str: ...
 def _hash_contents(contents: str) -> str: ...
 
-__all__ = ["_hash_contents", "_toml_update"]
+__version__: str
+
+__all__ = ["__version__", "_hash_contents", "_toml_update"]

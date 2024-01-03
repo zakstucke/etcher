@@ -422,6 +422,8 @@ def test_custom_ext_nice_user_invalid_errs(
 # DONE init
 # DONE version
 # DONE setup that are run sequentially (e.g. npm i)
+# TODO fix schema - not sure why its not working
+# TODO on config parsing, make sure the schema directive is at the correct version, update the config file if not
 # TODO update static
 # TODO allow replacing the matcher
 # TODO get everything out into bitbazaar that's possible

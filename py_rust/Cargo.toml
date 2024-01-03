@@ -13,7 +13,7 @@ valico = '4.0.0'
 
 [dependencies.bitbazaar]
 features = ['pyo3']
-version = '0.0.5'
+version = '0.0.6'
 
 [dependencies.clap]
 features = ['derive', 'string']

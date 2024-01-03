@@ -17,6 +17,8 @@ class BuiltinTestcase(tp.TypedDict):
     # Either the output to expect, or a function that returns True if valid when passed the rendered result:
     expected: tp.Union[str, tp.Callable[[str], bool]]
     static_ctx: tp.NotRequired[dict[str, StaticCtx]]
+    # Defaults to "txt"
+    file_type: tp.NotRequired[str]
 
 
 class BuiltinBase(tp.TypedDict):
@@ -50,6 +52,7 @@ ENGINE_BUILTINS: AllBuiltins = {
                     "expected": "foo:bar\nree:roo\n",
                 },
                 # Make sure workarounds for other chars e.g. @ work using json coercion:
+                # Note this is being done on a json file to confirm works in there, historic issue of minijinja escaping values in json files specifically:
                 {
                     "static_ctx": {
                         "aliases": {
@@ -59,6 +62,7 @@ ENGINE_BUILTINS: AllBuiltins = {
                     },
                     "input": "{% for key, value in aliases|items %}{{ key }}:{{ value }}\n{% endfor %}",
                     "expected": "@root:./example_project_js\n@scripts:./scripts\n",
+                    "file_type": "json",
                 },
             ],
         },
@@ -207,6 +211,7 @@ def test_extra_builtin_functions(name: str, info: FilterBuiltin, test_info: Buil
             test_info["expected"]
             if isinstance(test_info["expected"], str)
             else test_info["expected"],
+            file_type=test_info.get("file_type", "txt"),
         )
 
 
@@ -229,4 +234,5 @@ def test_extra_builtin_filters(name: str, info: FilterBuiltin, test_info: Builti
             test_info["expected"]
             if isinstance(test_info["expected"], str)
             else test_info["expected"],
+            file_type=test_info.get("file_type", "txt"),
         )

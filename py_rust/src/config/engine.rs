@@ -115,6 +115,11 @@ impl Engine {
             minijinja::UndefinedBehavior::Strict
         });
 
+        // Disable all default auto escaping, this caused problems with e.g. adding strings around values in json files:
+        env.set_auto_escape_callback(|_: &str| -> minijinja::AutoEscape {
+            minijinja::AutoEscape::None
+        });
+
         // This will allow loading files from templates using the relative root e.g. ./template where . is the root dir:
         env.set_loader(custom_loader(root));
 

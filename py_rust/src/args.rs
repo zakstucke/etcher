@@ -1,8 +1,39 @@
 use std::path::PathBuf;
 
+use bitbazaar::{err, errors::TracedErr};
 use clap::{command, Parser};
+use pyo3::Python;
 
 pub static DEFAULT_CONFIG_PATH: &str = "./etch.config.toml";
+
+/// Get the args from python rather than rust, works better:
+pub fn get_py_args() -> Result<Vec<String>, TracedErr> {
+    Python::with_gil(|py| {
+        Ok::<_, TracedErr>(
+            py.import("sys")?
+                .getattr("argv")?
+                .extract::<Vec<String>>()?,
+        )
+    })
+}
+
+// Create the version info string, used in multiple places so need to centralize logic.
+pub fn get_version_info() -> String {
+    let inner = || {
+        let py_args = get_py_args()?;
+        let bin_path = py_args
+            .get(0)
+            .ok_or_else(|| err!("Failed to get binary path from args: '{:?}'.", py_args))?
+            .clone();
+        Ok::<_, TracedErr>(format!("{} ({})", env!("CARGO_PKG_VERSION"), bin_path))
+    };
+    match inner() {
+        Ok(s) => s,
+        Err(e) => {
+            format!("Failed to get version info: {}", e)
+        }
+    }
+}
 
 #[derive(Debug, Parser)]
 #[command(
@@ -11,7 +42,7 @@ pub static DEFAULT_CONFIG_PATH: &str = "./etch.config.toml";
     about = "Etch: An extremely fast metaprogrammer.",
     after_help = "For help with a specific command, see: `etch help <command>`."
 )]
-#[command(version)]
+#[command(version = get_version_info())]
 pub struct Args {
     #[command(subcommand)]
     pub command: Command,

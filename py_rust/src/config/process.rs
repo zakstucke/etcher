@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use bitbazaar::{cli::run_cmd, err, errors::TracedErr, timeit};
-use log::info;
+use log::{debug, info};
 use serde::Serialize;
 
 use super::{engine::Engine, raw_conf::RawConfig};
@@ -55,16 +55,21 @@ pub fn process(raw: RawConfig) -> Result<Config, TracedErr> {
             },
         ));
     }
+
     for handle in handles {
         let (key, value) = handle.join().unwrap()?;
         context.insert(key, value);
     }
 
-    Ok(Config {
+    let config = Config {
         context,
         exclude: raw.exclude,
         engine: raw.engine,
         ignore_files: raw.ignore_files,
         setup_commands: raw.setup_commands,
-    })
+    };
+
+    debug!("Processed config: \n{:#?}", config);
+
+    Ok(config)
 }
