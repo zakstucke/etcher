@@ -50,7 +50,7 @@ license = 'MIT'
 name = 'etcher'
 publish = false
 readme = 'README.md'
-version = '0.0.17'
+version = '0.0.18'
 
 [profile]
 
